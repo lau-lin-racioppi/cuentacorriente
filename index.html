@@ -1429,8 +1429,14 @@
   "Cuenta: Bertinelli / Lin Racioppi"
 ].join("\n");
 
-      abrirMailImputacion({ to, cc, subject, body });
-    };
+function abrirMailImputacion({ to, cc, subject, body }) {
+  const enc = encodeURIComponent;
+
+  let url = `mailto:${enc(to)}?subject=${enc(subject)}&body=${enc(body)}`;
+  if (cc) url += `&cc=${enc(cc)}`;
+
+  window.location.href = url;
+}
 
     $("btnPrintPlan").onclick = ()=> printPlanYAcuerdo(state);
 
