@@ -366,7 +366,7 @@
       return `DOLARES BILLETES ESTADOUNIDENSES ${letras} (U$D ${m})`;
     }
 
-    function nextReciboNum4(state){
+    function nextReciboNum2(state){
       state.recibo_seq = (state.recibo_seq || 0) + 1;
       return String(state.recibo_seq).padStart(2,"0");
     }
