@@ -77,8 +77,8 @@
     <div>Precio solicitado: USD 44.000</div>
     <div>Precio escriturado: USD 41.000</div>
     <div>Crédito Banco Nación: USD 30.850</div>
-    <div>Entrega inicial: USD 5.000 (USD 3.000 madre + USD 2.000 comprador)</div>
-    <div><b>Saldo inicial convenido en cuenta corriente: USD 8.150</b></div>
+    <div>Entrega inicial: USD 5.000 </div>
+    <div>Saldo inicial convenido en cuenta corriente: USD 8.150</div>
   </div>
 
   <div class="card">
@@ -363,12 +363,12 @@
     function montoEnFormatoReciboUSD(monto){
       const m = Math.floor(Number(monto||0));
       const letras = numeroEnLetras(m);
-      return `DOLARES ESTADOUNIDENSES BILLETE ${letras} (USD ${m})`;
+      return `DOLARES BILLETES ESTADOUNIDENSES ${letras} (U$D ${m})`;
     }
 
     function nextReciboNum4(state){
       state.recibo_seq = (state.recibo_seq || 0) + 1;
-      return String(state.recibo_seq).padStart(4,"0");
+      return String(state.recibo_seq).padStart(2,"0");
     }
 
     function fileToDataUrl(file){
@@ -503,7 +503,7 @@
   <div class="sub">Cuenta Corriente – Bertinelli / Lin Racioppi</div>
 
   <p class="txt">
-    En la ciudad de ________________________, en el mes de <span class="b">${mes} de ${yyyy}</span>,
+    En la ciudad de Buenos Aires, en el mes de <span class="b">${mes} de ${yyyy}</span>,
     recibí de <span class="b">${state.meta.comprador}</span> la suma de
     <span class="upper">${montoLinea}</span>,
     en concepto de pago a cuenta del saldo pendiente de la operación de compraventa instrumentada mediante
@@ -521,7 +521,7 @@
       <div class="lineLabel">Firma comprador</div>
 
       <div class="line"></div>
-      <div class="lineLabel">Aclaración / DNI comprador</div>
+      <div class="lineLabel">${state.meta.comprador} / ${state.meta.dni_comprador}</div>
     </div>
 
     <div>
@@ -529,11 +529,10 @@
       <div class="lineLabel">Firma vendedor</div>
 
       <div class="line"></div>
-      <div class="lineLabel">Aclaración / DNI vendedor</div>
+      <div class="lineLabel">${state.meta.vendedor} / ${state.meta.dni_vendedor}</div>
     </div>
   </div>
 
-  <div class="foot">Pago en efectivo (USD billete).</div>
 </div>
 </body>
 </html>`;
@@ -575,9 +574,20 @@
 
       const docTitle = "Acuerdo y Anexo – Cuenta Corriente";
 
-      const acuerdo = `
-        <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO DE PRECIO</h1>
+      const fechaObj = new Date(Date.now());
 
+const meses = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+];
+
+const fecha = `${fechaObj.getDate()} de ${meses[fechaObj.getMonth()]} de ${fechaObj.getFullYear()}`;
+
+
+      const acuerdo = `
+        <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
+        <p> </p>
+        <p class="fecha"> Buenos Aires, ${fecha}</p>
         <p>
           Entre el Sr. <b>${state.meta.vendedor}</b>, DNI ${state.meta.dni_vendedor}, en adelante <b>EL VENDEDOR</b>,
           y el Sr. <b>${state.meta.comprador}</b>, DNI ${state.meta.dni_comprador}, en adelante <b>EL COMPRADOR</b>,
@@ -617,8 +627,8 @@
         </p>
 
         <p>
-          En prueba de conformidad, se firman dos ejemplares de un mismo tenor, en la ciudad de ______________________,
-          en el mes de ______________________ del año ____________.
+          En prueba de conformidad, se firman dos ejemplares de un mismo tenor, en la ciudad de Buenos Aires,
+          en el mes de ENERO del año 2026.
         </p>
 
         <div class="signRow">
@@ -641,6 +651,10 @@
   <title>${docTitle}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
+
+    .fecha {
+  text-align: right;
+}
     @page{ size:A4; margin:2.5cm; }
 
     body{ margin:0; background:#e5e7eb; font-family: Arial, sans-serif; color:#111; }
