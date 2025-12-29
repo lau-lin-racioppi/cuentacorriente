@@ -379,6 +379,16 @@
       });
     }
 
+    // ===== MAILTO (Spark-friendly) =====
+    function abrirMailImputacion({ to, cc, subject, body }) {
+      const params = new URLSearchParams();
+      if (cc) params.set("cc", cc);
+      params.set("subject", subject);
+      params.set("body", body);
+      const url = `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+      window.open(url, "_blank");
+    }
+
     function generarPlanBase(state){
       const plan = [];
 
@@ -717,13 +727,11 @@
       overflow-wrap: break-word;
     }
 
-    /* letra más grande + aire */
     p{ line-height:1.78; margin:0 0 12px 0; font-size:15.6px; }
     h1{ font-size:22px; margin:0; text-align:center; letter-spacing:.2px; }
     h2{ font-size:17px; margin:0 0 10px 0; }
     .small{ font-size:14.2px; color:#333; }
 
-    /* separaciones pedidas */
     .titleGap{ height:14mm; }
     .dateGap{ height:10mm; }
 
@@ -1029,33 +1037,6 @@
       saveState();
       hide("modalEmitir");
       render();
-
-      function abrirMailImputacion({to, cc, subject, body}) {
-  const params = new URLSearchParams();
-  if (cc) params.set("cc", cc);
-  params.set("subject", subject);
-  params.set("body", body);
-  const url = `mailto:${encodeURIComponent(to)}?${params.toString()}`;
-  window.open(url, "_blank");
-}
-
-// ... dentro de $("i_confirm").onclick, al final:
-const to = "l.linracioppi@gmail.com, "; // <-- poné acá
-const cc = ""; // opcional
-const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
-const body =
-`Se registró una imputación de pago.
-
-Recibo: R${rec.numero}
-Período: ${rec.periodo}
-Monto: U$S ${fmt(rec.monto)}
-Concepto: ${rec.concepto}
-Obs.: ${obs || "-"}
-
-Cuenta: Bertinelli / Lin Racioppi`;
-
-abrirMailImputacion({to, cc, subject, body});
-
       openReciboPrint(state, rec, "pendiente");
     };
 
@@ -1118,24 +1099,38 @@ abrirMailImputacion({to, cc, subject, body});
       const obs = String($("i_obs").value||"").trim();
       const dataUrl = await fileToDataUrl(file);
 
-    state._mailQueue = state._mailQueue || [];
-    state._mailQueue.push({
-      id: crypto.randomUUID(),
-      tipo: "imputacion_pago",
-      at: Date.now(),
-      recibo_num: rec.numero,
-      periodo: rec.periodo,
-      monto: rec.monto,
-      concepto: rec.concepto,
-      obs: obs || null,
-      adjunto_name: file.name,
-      adjunto_type: file.type
-    });
+      state.movs.push({
+        id: crypto.randomUUID(),
+        periodo: rec.periodo,
+        concepto: rec.concepto,
+        debito: 0,
+        credito: rec.monto,
+        recibo_num: rec.numero,
+        adjunto: { name: file.name, type: file.type, dataUrl },
+        obs: obs || null
+      });
 
       rec.estado = "imputado";
       saveState();
       hide("modalImputar");
       render();
+
+      // ===== Envío de mail por imputación (Spark-friendly) =====
+      const to = "l.linracioppi@gmail.com"; // podés agregar más separados por coma
+      const cc = ""; // opcional
+      const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
+      const body =
+`Se registró una imputación de pago.
+
+Recibo: R${rec.numero}
+Período: ${rec.periodo}
+Monto: U$S ${fmt(rec.monto)}
+Concepto: ${rec.concepto}
+Obs.: ${obs || "-"}
+
+Cuenta: Bertinelli / Lin Racioppi`;
+
+      abrirMailImputacion({ to, cc, subject, body });
     };
 
     $("btnPrintPlan").onclick = ()=> printPlanYAcuerdo(state);
