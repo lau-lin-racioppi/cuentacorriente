@@ -12,32 +12,116 @@
     --err:#fca5a5;
     --chip:#111827;
   }
+
+  *{ box-sizing:border-box; }
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
   .wrap{max-width:1200px;margin:auto;padding:16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0; overflow:hidden;}
   h1{margin:0 0 6px 0;font-size:20px}
   h2{margin:0 0 8px 0;font-size:15px;color:var(--muted)}
+
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
   .right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+
   .badge{border:1px solid var(--line);padding:6px 12px;border-radius:999px;background:var(--chip)}
   .btn{border:1px solid var(--line);background:#222733;color:var(--text);padding:8px 12px;border-radius:10px;font-weight:650;cursor:pointer}
   .btn.primary{background:var(--primary);border-color:#1d4ed8}
   .btn.danger{background:var(--danger);border-color:#991b1b}
   .btn:disabled{opacity:.5;cursor:not-allowed}
+
   .muted{color:var(--muted);font-size:12px}
   .small{font-size:12px;color:var(--muted)}
   .err{font-size:12px;color:var(--err)}
-  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+
+  /* ======== TABLAS: alineación/recorte en mobile + columnas consistentes ======== */
+  .tableWrap{
+    width:100%;
+    overflow-x:auto;              /* evita desbordes y “líneas fuera del borde” */
+    -webkit-overflow-scrolling:touch;
+    border-radius:12px;
+  }
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px; table-layout:fixed;}
+  thead th{position:sticky; top:0; background:var(--panel); z-index:1;}
   th,td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
   th{color:var(--muted);text-align:left;font-weight:650}
-  td.num{text-align:right;white-space:nowrap}
+  td.num, th.num{text-align:right;white-space:nowrap; font-variant-numeric: tabular-nums;}
+  td{overflow:hidden; text-overflow:ellipsis;}
   a{color:#93c5fd;text-decoration:none}
   a:hover{text-decoration:underline}
+
+  /* Anchors de columnas por “tipo de tabla” para que queden alineadas */
+  table.plan col.c-periodo{width:110px}
+  table.plan col.c-monto{width:120px}
+  table.plan col.c-estado{width:200px}
+  table.plan col.c-saldo{width:150px}
+
+  table.rec col.c-periodo{width:110px}
+  table.rec col.c-monto{width:120px}
+  table.rec col.c-recibo{width:220px}
+  table.rec col.c-estado{width:140px}
+
+  table.mov col.c-periodo{width:110px}
+  table.mov col.c-deb{width:110px}
+  table.mov col.c-cred{width:110px}
+  table.mov col.c-saldo{width:110px}
+  table.mov col.c-adj{width:190px}
+
+  /* En pantallas chicas: mantenemos tabla scrolleable para no romper alineaciones */
+  @media (max-width:900px){
+    .wrap{padding:12px}
+    table{min-width:860px;} /* fuerza scroll horizontal en vez de “correr columnas” */
+  }
+
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
   input,select,textarea{background:#0f1115;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
   textarea{min-height:70px;resize:vertical}
   hr{border:none;border-top:1px solid var(--line);margin:10px 0}
+
+  /* ======== planResumen: grande y NO muteado ======== */
+  #planResumen{
+    font-size:14px;
+    font-weight:750;
+    color:var(--text);
+    line-height:1.25;
+  }
+  @media (min-width:901px){
+    #planResumen{ font-size:15px; }
+  }
+
+  /* ======== Cards desplegables (Cabecera / Anexo económico) ======== */
+  .disclosureHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .disclosureHead h2{ margin:0; }
+  .chev{
+    width:34px;height:34px;
+    display:grid;place-items:center;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#111827;
+    font-weight:900;
+  }
+  .disclosureBody{ margin-top:10px; }
+  .collapsed .disclosureBody{ display:none; }
+  .collapsed .chev{ transform:rotate(-90deg); }
+
+  /* ======== Botón “Ver acuerdo…” destacado para visualizador ======== */
+  .btn.bigPrimary{
+    background:var(--primary);
+    border-color:#1d4ed8;
+    padding:12px 16px;
+    font-weight:850;
+    border-radius:12px;
+    box-shadow:0 8px 18px rgba(37,99,235,.25);
+  }
+  .btn.bigPrimary:hover{ filter:brightness(1.03); }
 
   .modal{
     position:fixed; inset:0;
@@ -71,79 +155,120 @@
       <span class="badge" id="saldoBadge">Saldo: —</span>
       <button class="btn primary" id="btnEmitir">Emitir recibo</button>
       <button class="btn primary" id="btnImputar">Imputar pago</button>
-      <button class="btn" id="btnPrintPlan"> Ver Acuerdo + Plan de Pagos </button>
+      <button class="btn" id="btnPrintPlan">Ver Acuerdo + Plan de Pagos</button>
       <button class="btn" id="btnExport">Exportar JSON</button>
       <button class="btn" id="btnImport">Importar JSON</button>
       <button class="btn danger" id="btnReset">Reset TOTAL</button>
     </div>
   </div>
 
-  <div class="card">
-    <h2>Cabecera</h2>
-    <div><b>Escritura Nº 434</b> – Registro Notarial Nº <b>30</b> – Escribano: <b>Norberto Gustavo Soler</b></div>
-    <div>Operación: <b>Compraventa inmueble – 25 de Mayo 8, 6º C, Ciudadela</b></div>
-    <div>Vendedor: <b>José Orlando Bertinelli</b> · Comprador: <b>Lautaro Nahuel Lin Racioppi</b></div>
+  <!-- Cabecera (desplegable) -->
+  <div class="card" id="cardCabecera">
+    <div class="disclosureHead" id="cabHead" role="button" aria-expanded="true">
+      <h2>Cabecera</h2>
+      <div class="chev" aria-hidden="true">⌄</div>
+    </div>
+    <div class="disclosureBody" id="cabBody">
+      <div><b>Escritura Nº 434</b> – Registro Notarial Nº <b>30</b> – Escribano: <b>Norberto Gustavo Soler</b></div>
+      <div>Operación: <b>Compraventa inmueble – 25 de Mayo 8, 6º C, Ciudadela</b></div>
+      <div>Vendedor: <b>José Orlando Bertinelli</b> · Comprador: <b>Lautaro Nahuel Lin Racioppi</b></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Anexo económico</h2>
-    <div>Precio solicitado: USD 44.000</div>
-    <div>Precio escriturado: USD 41.000</div>
-    <div>Crédito Banco Nación: USD 30.850</div>
-    <div>Entrega inicial: USD 5.000</div>
-    <div>Saldo inicial convenido en cuenta corriente: USD 8.150</div>
+  <!-- Anexo económico (desplegable) -->
+  <div class="card" id="cardAnexo">
+    <div class="disclosureHead" id="anxHead" role="button" aria-expanded="true">
+      <h2>Anexo económico</h2>
+      <div class="chev" aria-hidden="true">⌄</div>
+    </div>
+    <div class="disclosureBody" id="anxBody">
+      <div>Precio solicitado: USD 44.000</div>
+      <div>Precio escriturado: USD 41.000</div>
+      <div>Crédito Banco Nación: USD 30.850</div>
+      <div>Entrega inicial: USD 5.000</div>
+      <div>Saldo inicial convenido en cuenta corriente: USD 8.150</div>
+    </div>
   </div>
 
   <div class="card">
     <div class="row" style="align-items:flex-end">
       <h2 style="margin:0">Plan de pagos proyectado</h2>
-      <div class="muted" id="planResumen">—</div>
+      <div id="planResumen">—</div>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:110px">Período</th>
-          <th>Concepto</th>
-          <th class="num" style="width:120px">Monto (U$S)</th>
-          <th style="width:200px">Estado</th>
-          <th class="num" style="width:150px">Saldo proyectado</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyPlan"></tbody>
-    </table>
+
+    <div class="tableWrap">
+      <table class="plan">
+        <colgroup>
+          <col class="c-periodo">
+          <col>
+          <col class="c-monto">
+          <col class="c-estado">
+          <col class="c-saldo">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Concepto</th>
+            <th class="num">Monto (U$S)</th>
+            <th>Estado</th>
+            <th class="num">Saldo proyectado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyPlan"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="card">
     <h2>Recibos emitidos</h2>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:110px">Período</th>
-          <th>Concepto</th>
-          <th class="num" style="width:120px">Monto (U$S)</th>
-          <th style="width:220px">Recibo</th>
-          <th style="width:140px">Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyRec"></tbody>
-    </table>
+    <div class="tableWrap">
+      <table class="rec">
+        <colgroup>
+          <col class="c-periodo">
+          <col>
+          <col class="c-monto">
+          <col class="c-recibo">
+          <col class="c-estado">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Concepto</th>
+            <th class="num">Monto (U$S)</th>
+            <th>Recibo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyRec"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="card">
     <h2>Libro de movimientos</h2>
-    <table>
-      <thead>
-        <tr>
-          <th style="width:110px">Período</th>
-          <th>Concepto</th>
-          <th class="num" style="width:110px">Débito</th>
-          <th class="num" style="width:110px">Crédito</th>
-          <th class="num" style="width:110px">Saldo</th>
-          <th style="width:190px">Adjunto</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyMov"></tbody>
-    </table>
+    <div class="tableWrap">
+      <table class="mov">
+        <colgroup>
+          <col class="c-periodo">
+          <col>
+          <col class="c-deb">
+          <col class="c-cred">
+          <col class="c-saldo">
+          <col class="c-adj">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Concepto</th>
+            <th class="num">Débito</th>
+            <th class="num">Crédito</th>
+            <th class="num">Saldo</th>
+            <th>Adjunto</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyMov"></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -272,6 +397,21 @@
     function hide(id){ $(id).classList.remove("show"); }
     function isPeriodo(x){ return /^\d{2}\/\d{4}$/.test(String(x||"").trim()); }
 
+    // ====== desplegables (Cabecera / Anexo) ======
+    function toggleCard(cardId){
+      const el = $(cardId);
+      const isCollapsed = el.classList.toggle("collapsed");
+      return !isCollapsed;
+    }
+    $("cabHead").onclick = ()=>{
+      const open = toggleCard("cardCabecera");
+      $("cabHead").setAttribute("aria-expanded", String(open));
+    };
+    $("anxHead").onclick = ()=>{
+      const open = toggleCard("cardAnexo");
+      $("anxHead").setAttribute("aria-expanded", String(open));
+    };
+
     function makeInitialState(){
       return {
         meta:{
@@ -389,8 +529,6 @@
     }
 
     // ===== MAILTO (Spark-friendly) =====
-    // Nota: con mailto NO podés forzar "diseño HTML" real. Solo texto.
-    // Si el cliente te mete guiones, esto minimiza (encode + \r\n) pero depende del cliente.
     function abrirMailImputacion({ to, cc, subject, body }) {
       const enc = encodeURIComponent;
       const normalized = String(body || "").replace(/\n/g, "\r\n");
@@ -653,7 +791,6 @@
       return true;
     }
 
-    // fallback: descarga
     const blob = new Blob([html], {type:"text/html"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -894,30 +1031,30 @@
           pasada ante el <b>Registro Notarial Nº ${state.meta.registro}</b>, referida al mes de <b>${state.meta.ref_mes}</b>.
         </p>
 
-        <p><b>ANTECEDENTE – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó
+        <p><b>SEGUNDA – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó
           en concepto de entrega inicial la suma de <b>U$S ${fmt(state.meta.entrega_inicial)}</b>, quedando el saldo
           convenido en cuenta corriente determinado en función de dicha entrega.
         </p>
 
-        <p><b>SEGUNDA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por
+        <p><b>TERCERA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por
           <b>U$S ${fmt(state.meta.saldo_inicial)}</b>.
         </p>
 
-        <p><b>TERCERA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) <b>enero 2026</b>: U$S 150;
+        <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) <b>enero 2026</b>: U$S 150;
           b) desde el período siguiente: pagos mensuales de referencia de U$S 500 hasta cancelar el saldo.
         </p>
 
-        <p><b>CUARTA – Adelantos.</b> El COMPRADOR podrá efectuar pagos adelantados o superiores sin penalidad.
+        <p><b>QUINTA – Adelantos.</b> El COMPRADOR podrá efectuar pagos adelantados o superiores sin penalidad.
           Dichos adelantos se imputarán al saldo y acortarán la duración total del plan.
         </p>
 
-        <p><b>QUINTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar el saldo
+        <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar el saldo
           hasta cero.
         </p>
 
-        <p><b>SEXTA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
+        <p><b>SÉPTIMA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
 
-        <p><b>SÉPTIMA – Naturaleza.</b> El presente acuerdo es complementario de la escritura referida y regula exclusivamente
+        <p><b>OCTAVA – Naturaleza.</b> El presente acuerdo es complementario de la escritura referida y regula exclusivamente
           la modalidad de cancelación del saldo pendiente.
         </p>
 
@@ -1030,7 +1167,7 @@
     ${acuerdo}
     <div class="pageBreak"></div>
 
-    <h2>ANEXO I – PLAN DE PAGOS</h2>
+    <h2>ANEXO PLAN DE PAGOS</h2>
     <p class="small">
       Inmueble: <b>${state.meta.inmueble}</b><br/>
       Escritura Nº <b>${state.meta.escritura_num}</b> – Registro Notarial Nº <b>${state.meta.registro}</b>.
@@ -1139,6 +1276,10 @@
       $("btnExport").style.display = "none";
       $("btnImport").style.display = "none";
       $("btnReset").style.display = "none";
+
+      // destacar el botón acuerdo/plan
+      $("btnPrintPlan").classList.add("bigPrimary");
+      $("btnPrintPlan").textContent = "VER ACUERDO + PLAN DE PAGOS";
     }
     function setEditorUI(){
       $("btnEmitir").style.display = "";
@@ -1146,6 +1287,9 @@
       $("btnExport").style.display = "";
       $("btnImport").style.display = "";
       $("btnReset").style.display = "";
+
+      $("btnPrintPlan").classList.remove("bigPrimary");
+      $("btnPrintPlan").textContent = "Ver Acuerdo + Plan de Pagos";
     }
 
     onAuthStateChanged(auth, (user)=>{
@@ -1407,7 +1551,6 @@
       hide("modalImputar");
       render();
 
-      // ===== Envío de mail por imputación =====
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
       const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
@@ -1427,6 +1570,7 @@
     };
 
     $("btnPrintPlan").onclick = ()=> printPlanYAcuerdo(state);
+    $("btnReset").onclick = ()=> hardReset();
 
     $("btnExport").onclick = ()=>{
       const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
@@ -1463,8 +1607,6 @@
       };
       inp.click();
     };
-
-    $("btnReset").onclick = ()=> hardReset();
 
     render();
   });
