@@ -1417,16 +1417,17 @@
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
       const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
-      const body =
-`Se registró una imputación de pago.
-
-Recibo: R${rec.numero}
-Período: ${rec.periodo}
-Monto: U$S ${fmt(rec.monto)}
-Concepto: ${rec.concepto}
-Obs.: ${obs || " "}
-
-Cuenta: Bertinelli / Lin Racioppi`;
+      const body = [
+  "Se registró una imputación de pago.",
+  "",
+  `Recibo: R${rec.numero}`,
+  `Período: ${rec.periodo}`,
+  `Monto: U$S ${fmt(rec.monto)}`,
+  `Concepto: ${rec.concepto}`,
+  `Obs.: ${obs || ""}`,
+  "",
+  "Cuenta: Bertinelli / Lin Racioppi"
+].join("\n");
 
       abrirMailImputacion({ to, cc, subject, body });
     };
