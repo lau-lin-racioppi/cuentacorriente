@@ -727,6 +727,7 @@
       w.document.open();
       w.document.write(html);
       w.document.close();
+      try { w.document.title = docTitle; } catch(e) {}
     }
 
     const authBar = $("authBar");
