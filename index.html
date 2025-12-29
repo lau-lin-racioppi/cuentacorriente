@@ -434,12 +434,9 @@
       return { fin: lastNotCumplida ? lastNotCumplida.periodo : "(—)", cuotasRestantes: cuotas.slice(firstPendingIdx).length };
     }
 
-    // =========================================================
-    // RECIBO: A5 apaisado
-    // - Aumenté tipografías
-    // - Hice que el contenido "llene" más el alto usando layout flex
-    //   para empujar firmas hacia abajo sin tocar márgenes de @page.
-    // =========================================================
+    // ======================
+    // RECIBO (A5 apaisado)
+    // ======================
     function openReciboPrint(state, rec, modo, saldoLuego){
       const isImputado = (modo === "imputado");
       const [mm,yyyy] = String(rec.periodo).split("/");
@@ -469,7 +466,6 @@
   .btn{border:1px solid #111;background:#f2f2f2;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
   @media print{ .noprint{display:none} }
 
-  /* Vista pantalla */
   .sheet{
     background:#fff;
     border:1px solid #111;
@@ -482,7 +478,6 @@
     margin:12px auto;
   }
 
-  /* Impresión: ocupar el área imprimible */
   @media print{
     .sheet{
       max-width:none;
@@ -501,7 +496,6 @@
     overflow-wrap: break-word;
   }
 
-  /* MÁS GRANDE */
   .h1{font-size:18px;font-weight:900;margin:0 0 4px 0}
   .sub{font-size:13px;color:#333;margin:0 0 10px 0}
 
@@ -512,11 +506,10 @@
   .kv{margin:8px 0;font-size:14px}
   .k{color:#222}
 
-  /* Para llenar alto y empujar firmas abajo */
   .vbox{
     display:flex;
     flex-direction:column;
-    min-height:calc(148mm - 20mm); /* aproximación útil en pantalla */
+    min-height:calc(148mm - 20mm);
   }
   @media print{
     .vbox{ min-height:0; height:100%; }
@@ -599,13 +592,9 @@
       w.document.close();
     }
 
-    // =========================================================
-    // ACUERDO + ANEXO: A4 en 2 páginas JUSTAS
-    // - Página 1: solo acuerdo
-    // - Página 2: solo plan
-    // - Aumenté tipografías y espaciados
-    // - Fuerzo el salto con un contenedor .pageBreak
-    // =========================================================
+    // ==========================
+    // ACUERDO + ANEXO (A4 2 páginas)
+    // ==========================
     function printPlanYAcuerdo(state){
       const plan = aplicarPagosAlPlan(generarPlanBase(state), state);
 
@@ -627,7 +616,10 @@
 
       const acuerdo = `
         <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
+        <div class="titleGap"></div>
+
         <p class="fecha">Buenos Aires, ${fecha}</p>
+        <div class="dateGap"></div>
 
         <p>
           Entre el Sr. <b>${state.meta.vendedor}</b>, DNI ${state.meta.dni_vendedor}, en adelante <b>EL VENDEDOR</b>,
@@ -706,7 +698,6 @@
     .noprint{ padding:12px; }
     .btn{border:1px solid #111;background:#f2f2f2;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
 
-    /* Pantalla */
     .sheet{
       width:210mm;
       min-height:297mm;
@@ -726,27 +717,30 @@
       overflow-wrap: break-word;
     }
 
-    /* MÁS GRANDE (acuerdo “llena” una página) */
-    p{ line-height:1.72; margin:0 0 11px 0; font-size:14.6px; }
-    h1{ font-size:19px; margin:0 0 12px 0; text-align:center; letter-spacing:.2px; }
-    h2{ font-size:16px; margin:0 0 10px 0; }
-    .small{ font-size:13.3px; color:#333; }
+    /* letra más grande + aire */
+    p{ line-height:1.78; margin:0 0 12px 0; font-size:15.6px; }
+    h1{ font-size:22px; margin:0; text-align:center; letter-spacing:.2px; }
+    h2{ font-size:17px; margin:0 0 10px 0; }
+    .small{ font-size:14.2px; color:#333; }
 
-    table{ width:100%; border-collapse: collapse; margin:12px 0; font-size:13.3px; }
+    /* separaciones pedidas */
+    .titleGap{ height:14mm; }
+    .dateGap{ height:10mm; }
+
+    table{ width:100%; border-collapse: collapse; margin:12px 0; font-size:13.8px; }
     th,td{ border:1px solid #000; padding:6px; vertical-align:top; }
     th{ background:#eee; text-align:left; }
     td.num{ text-align:right; white-space:nowrap; }
 
-    /* PÁGINAS JUSTAS */
     .pageBreak{
       break-before: page;
       page-break-before: always;
     }
 
-    .signRow{ display:flex; gap:40px; margin-top:26px; }
+    .signRow{ display:flex; gap:40px; margin-top:28px; }
     .sign{ flex:1; }
     .line{ border-top:1px solid #000; margin-top:24px; }
-    .lbl{ font-size:12.8px; padding-top:6px; }
+    .lbl{ font-size:13.2px; padding-top:6px; }
 
     @media print{
       body{ background:#fff; }
@@ -767,10 +761,7 @@
   </div>
 
   <div class="sheet">
-    <!-- PÁGINA 1: ACUERDO -->
     ${acuerdo}
-
-    <!-- PÁGINA 2: PLAN -->
     <div class="pageBreak"></div>
 
     <h2>ANEXO I – PLAN DE PAGOS</h2>
@@ -806,6 +797,9 @@
       try { w.document.title = docTitle; } catch(e) {}
     }
 
+    // ==========
+    // AUTH UI (UNA SOLA VEZ)
+    // ==========
     const authBar = $("authBar");
     authBar.innerHTML = `
       <span id="authStatus">Modo visualizador</span>
@@ -862,18 +856,15 @@
       }
     });
 
+    // ==========
+    // STATE (UNA SOLA VEZ)
+    // ==========
     let state = await pullRemoteOrInit(makeInitialState);
     localStorage.setItem(KEY, JSON.stringify(state));
 
-    function applyRemoteState(remoteState){
-      const rrev = remoteState?._meta?.rev || 0;
-      if (rrev <= (state?._meta?.rev || 0)) return;
-
-      applyingRemote = true;
-      state = remoteState;
+    function saveState(){
       localStorage.setItem(KEY, JSON.stringify(state));
-      render();
-      applyingRemote = false;
+      pushRemote(state).catch(err => console.error("pushRemote error", err));
     }
 
     onSnapshot(CC_REF, (snap)=>{
@@ -885,14 +876,20 @@
       const rrev = remoteState?._meta?.rev || 0;
 
       if (rrev === lastLocalRev && remoteState?._meta?.updatedBy === clientId) return;
-      applyRemoteState(remoteState);
+
+      const cur = state?._meta?.rev || 0;
+      if (rrev <= cur) return;
+
+      applyingRemote = true;
+      state = remoteState;
+      localStorage.setItem(KEY, JSON.stringify(state));
+      render();
+      applyingRemote = false;
     });
 
-    function saveState(){
-      localStorage.setItem(KEY, JSON.stringify(state));
-      pushRemote(state).catch(err => console.error("pushRemote error", err));
-    }
-
+    // ==========
+    // RENDER
+    // ==========
     function render(){
       if(!state || !state.meta || !Array.isArray(state.movs) || !Array.isArray(state.recibos)){
         $("saldoBadge").textContent = "Saldo: —";
@@ -1004,6 +1001,9 @@
       });
     }
 
+    // ==========
+    // UI EVENTS
+    // ==========
     $("btnEmitir").onclick = ()=>{
       $("e_periodo").value = "01/2026";
       $("e_monto").value = "";
@@ -1029,6 +1029,33 @@
       saveState();
       hide("modalEmitir");
       render();
+
+      function abrirMailImputacion({to, cc, subject, body}) {
+  const params = new URLSearchParams();
+  if (cc) params.set("cc", cc);
+  params.set("subject", subject);
+  params.set("body", body);
+  const url = `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+  window.open(url, "_blank");
+}
+
+// ... dentro de $("i_confirm").onclick, al final:
+const to = "l.linracioppi@gmail.com, "; // <-- poné acá
+const cc = ""; // opcional
+const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
+const body =
+`Se registró una imputación de pago.
+
+Recibo: R${rec.numero}
+Período: ${rec.periodo}
+Monto: U$S ${fmt(rec.monto)}
+Concepto: ${rec.concepto}
+Obs.: ${obs || "-"}
+
+Cuenta: Bertinelli / Lin Racioppi`;
+
+abrirMailImputacion({to, cc, subject, body});
+
       openReciboPrint(state, rec, "pendiente");
     };
 
@@ -1091,16 +1118,19 @@
       const obs = String($("i_obs").value||"").trim();
       const dataUrl = await fileToDataUrl(file);
 
-      state.movs.push({
-        id: crypto.randomUUID(),
-        periodo: rec.periodo,
-        concepto: rec.concepto,
-        debito: 0,
-        credito: rec.monto,
-        recibo_num: rec.numero,
-        adjunto: { name: file.name, type: file.type, dataUrl },
-        obs: obs || null
-      });
+    state._mailQueue = state._mailQueue || [];
+    state._mailQueue.push({
+      id: crypto.randomUUID(),
+      tipo: "imputacion_pago",
+      at: Date.now(),
+      recibo_num: rec.numero,
+      periodo: rec.periodo,
+      monto: rec.monto,
+      concepto: rec.concepto,
+      obs: obs || null,
+      adjunto_name: file.name,
+      adjunto_type: file.type
+    });
 
       rec.estado = "imputado";
       saveState();
