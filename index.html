@@ -53,14 +53,44 @@
     .top{grid-template-columns:1fr}
   }
 
-  h1{
-    margin:0;
-    font-size:22px;
-    letter-spacing:.2px;
-  }
+  h1{margin:0;font-size:22px;letter-spacing:.2px}
   .subhead{color:var(--muted);font-size:12.5px;margin-top:6px}
 
+  /* ===== AUTH (ahora plegable y “discreto” en visualizador) ===== */
+  .authShell{
+    display:flex;
+    justify-content:flex-end;
+  }
+  @media (max-width: 980px){
+    .authShell{justify-content:flex-start}
+  }
+  details.authDetails{
+    width: min(520px, 100%);
+  }
+  details.authDetails > summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid var(--line2);
+    border-radius:16px;
+    background: rgba(0,0,0,.12);
+    color: rgba(233,236,241,.9);
+    font-weight:850;
+    font-size:12.5px;
+    user-select:none;
+  }
+  details.authDetails > summary::-webkit-details-marker{display:none}
+  details.authDetails > summary .dot{
+    width:8px;height:8px;border-radius:99px;background:rgba(147,161,182,.7);
+    box-shadow:0 0 0 4px rgba(147,161,182,.12);
+  }
+  details.authDetails[open] > summary .chev{transform:rotate(180deg)}
   .auth{
+    margin-top:10px;
     display:flex;
     gap:10px;
     flex-wrap:wrap;
@@ -73,9 +103,9 @@
   }
   @media (max-width: 980px){
     .auth{justify-content:flex-start}
+    details.authDetails > summary{justify-content:flex-start}
   }
-
-  .auth .status{color:var(--muted);font-size:12px}
+  .auth .status{color:var(--muted);font-size:12px;flex-basis:100%}
   .auth input{
     background: rgba(0,0,0,.22);
     color: var(--text);
@@ -95,7 +125,7 @@
     font-weight:750;
     cursor:pointer;
   }
-  /* Entrar SIN color (pedido) */
+  /* Entrar SIN color (pedido previo) */
   .auth .btn.primary{
     background: rgba(255,255,255,.06);
     border-color: var(--line2);
@@ -108,7 +138,7 @@
     grid-template-columns: 1fr auto;
     gap:14px;
     align-items:stretch;
-    margin-top:14px;
+    margin-top:18px; /* (pedido) un poco más de aire con lo de abajo */
   }
   @media (max-width: 980px){
     .heroRow{grid-template-columns:1fr}
@@ -125,16 +155,8 @@
     justify-content:center;
   }
   .saldoPill .ttl{font-size:12px;color:#cfe0ff;letter-spacing:.2px}
-  .saldoPill .amt{
-    font-size:34px;
-    font-weight:900;
-    margin:4px 0 2px 0;
-    line-height:1.05;
-  }
-  .saldoPill .extra{
-    color: rgba(233,236,241,.82);
-    font-size:12.5px;
-  }
+  .saldoPill .amt{font-size:34px;font-weight:900;margin:4px 0 2px 0;line-height:1.05}
+  .saldoPill .extra{color: rgba(233,236,241,.82);font-size:12.5px}
 
   .ctaCol{
     display:flex;
@@ -175,7 +197,7 @@
   }
   .btn:disabled{opacity:.5;cursor:not-allowed}
 
-  /* CTA “Ver acuerdo + plan” (llamativo, NO protagonista) */
+  /* CTA “Ver acuerdo + plan” */
   .btn.agreement{
     background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.06));
     border-color: rgba(147,197,253,.35);
@@ -225,6 +247,9 @@
   details.section[open] .sumRight svg{transform: rotate(180deg)}
   .sectionBody{padding:0 12px 12px 12px}
 
+  /* (pedido) separación extra entre heroRow y primera sección */
+  .afterHeroSpacer{height:8px}
+
   /* ===== TABLAS RESPONSIVE SIN SCROLL HORIZONTAL ===== */
   table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
   th,td{border-bottom:1px solid var(--line2);padding:10px 8px;vertical-align:top}
@@ -233,7 +258,7 @@
   a{color:#93c5fd;text-decoration:none}
   a:hover{text-decoration:underline}
 
-  /* IMPORTANTÍSIMO: evitar “vertical” en concepto */
+  /* evitar “vertical” en concepto */
   td.conceptCell{
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
@@ -279,18 +304,25 @@
   .small{font-size:12px;color:var(--muted)}
   .err{font-size:12px;color:#fca5a5}
 
+  /* ===== MODALES: más opacos y legibles (pedido) ===== */
   .modal{
     position:fixed; inset:0;
     display:none;
-    background:rgba(0,0,0,.62);
+    background:rgba(0,0,0,.78); /* más oscuro */
     padding:14px;
     overflow:auto;
     -webkit-overflow-scrolling: touch;
-    align-items:stretch;
+    align-items:center;
     justify-content:center;
   }
   .modal.show{display:flex}
-  .modal .card{max-width:920px;width:100%;margin:auto}
+  .modal .card{
+    max-width:920px;width:100%;
+    margin:auto;
+    background: linear-gradient(180deg, rgba(18,22,34,.98), rgba(18,22,34,.92));
+    border:1px solid rgba(35,48,73,.9);
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  }
 
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media (max-width:900px){ .grid{grid-template-columns:1fr} }
@@ -310,7 +342,6 @@
   .ck{display:flex;gap:10px;align-items:flex-start}
   .ck input{width:auto;margin-top:3px}
 
-  /* util */
   .hide{display:none !important}
 </style>
 </head>
@@ -321,14 +352,16 @@
   <div class="top">
     <div>
       <h1>Cuenta Corriente – Bertinelli / Lin Racioppi</h1>
+      <div class="subhead">Control contable + recibos firmados + acuerdo y anexo imprimibles.</div>
     </div>
 
-    <div class="auth" id="authBar"></div>
+    <!-- Auth plegable -->
+    <div class="authShell" id="authShell"></div>
   </div>
 
   <div class="heroRow">
     <div class="saldoPill">
-      <div class="ttl">Saldo pendiente – Cuenta Corriente</div>
+      <div class="ttl">Saldo actual – cuenta corriente</div>
       <div class="amt" id="saldoGrande">U$S —</div>
       <div class="extra" id="saldoExtra">—</div>
     </div>
@@ -341,14 +374,12 @@
             <path d="M14 3v4h4" stroke="currentColor" stroke-width="2"/>
             <path d="M8 12h8M8 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-
-        Ver acuerdo + plan de pagos
+          Ver acuerdo + plan de pagos
         </button>
 
-      <p> <button class="btn primary" id="btnEmitir">
+        <button class="btn primary" id="btnEmitir">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </p>
           </svg>
           Emitir recibo
         </button>
@@ -367,7 +398,8 @@
     </div>
   </div>
 
-  <!-- CABECERA / ANEXO / PLAN como secciones -->
+  <div class="afterHeroSpacer"></div>
+
   <details class="section" id="secCabecera">
     <summary>
       <div class="sumLeft">
@@ -462,7 +494,6 @@
     </div>
   </details>
 
-  <!-- Recibos (se oculta en modo visualizador) -->
   <div class="card" id="cardRecibos">
     <h2 style="margin:0 0 8px 0;color:var(--muted)">Recibos emitidos</h2>
     <table>
@@ -595,6 +626,13 @@
   function show(id){ $(id).classList.add("show"); }
   function hide(id){ $(id).classList.remove("show"); }
   function isPeriodo(x){ return /^\d{2}\/\d{4}$/.test(String(x||"").trim()); }
+
+  function periodoActualMMYYYY(){
+    const d = new Date();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = String(d.getFullYear());
+    return `${mm}/${yyyy}`;
+  }
 
   async function pushRemote(state) {
     if (!canWrite) return;
@@ -800,7 +838,7 @@
   }
 
   // ==================================================
-  // RECIBO A5 apaisado – 1 sola hoja + borde (pedido)
+  // RECIBO A5 apaisado – 1 sola hoja + borde
   // ==================================================
   function openReciboPrint(state, rec, modo, saldoLuego){
     const isImputado = (modo === "imputado");
@@ -859,7 +897,6 @@
     cursor:pointer;
   }
 
-  /* Hoja: siempre con borde y en una sola hoja al imprimir */
   .sheet{
     background:#fff;
     border:1px solid #111;
@@ -915,7 +952,6 @@
       padding:10mm;
       border:1px solid #111;
       border-radius:10px;
-      /* Evitar cortes */
       break-inside: avoid;
       page-break-inside: avoid;
     }
@@ -1168,9 +1204,6 @@
     w.document.close();
   }
 
-  // ==========================
-  // ACUERDO + ANEXO (ACUERDO REAL COMPLETO)
-  // ==========================
   function printPlanYAcuerdo(state){
     const plan = aplicarPagosAlPlan(generarPlanBase(state), state);
 
@@ -1190,7 +1223,6 @@
     const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
     const fecha = `${fechaObj.getDate()} de ${meses[fechaObj.getMonth()]} de ${fechaObj.getFullYear()}`;
 
-    // === TEXTO REAL (tal cual lo pasaste, integrado en HTML) ===
     const acuerdo = `
       <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
       <p class="fecha">Buenos Aires, ${fecha}</p>
@@ -1393,13 +1425,26 @@
 
   // ========== AUTH UI ==========
   function mountAuthUI(){
-    const authBar = $("authBar");
-    authBar.innerHTML = `
-      <span class="status" id="authStatus">Modo visualizador (solo lectura)</span>
-      <input id="loginEmail" type="email" placeholder="Email editor" />
-      <input id="loginPass" type="password" placeholder="Contraseña" />
-      <button id="btnLogin" class="btn primary">Entrar</button>
-      <button id="btnLogout" class="btn" style="display:none">Salir</button>
+    const authShell = $("authShell");
+
+    authShell.innerHTML = `
+      <details class="authDetails" id="authDetails">
+        <summary>
+          <span class="dot" aria-hidden="true"></span>
+          <span id="authSummaryText">Acceso</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:16px;height:16px;opacity:.9">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </summary>
+
+        <div class="auth" id="authBar">
+          <span class="status" id="authStatus">Modo visualizador (solo lectura)</span>
+          <input id="loginEmail" type="email" placeholder="Email editor" />
+          <input id="loginPass" type="password" placeholder="Contraseña" />
+          <button id="btnLogin" class="btn primary">Entrar</button>
+          <button id="btnLogout" class="btn" style="display:none">Salir</button>
+        </div>
+      </details>
     `;
 
     const loginEmail = $("loginEmail");
@@ -1425,7 +1470,7 @@
     $("btnExport").classList.add("hide");
     $("btnImport").classList.add("hide");
     $("btnReset").classList.add("hide");
-    $("cardRecibos").classList.add("hide"); // pedido: no ver recibos emitidos en visualizador
+    $("cardRecibos").classList.add("hide");
   }
   function setEditorUI(){
     $("btnEmitir").classList.remove("hide");
@@ -1487,7 +1532,6 @@
     $("saldoExtra").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
     $("planResumenInline").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
 
-    // Plan
     const tbPlan = $("tbodyPlan");
     tbPlan.innerHTML = "";
     plan.forEach(p=>{
@@ -1502,7 +1546,6 @@
       tbPlan.appendChild(tr);
     });
 
-    // Recibos
     const tbRec = $("tbodyRec");
     tbRec.innerHTML = "";
     if(state.recibos.length === 0){
@@ -1523,7 +1566,6 @@
       });
     }
 
-    // Movimientos
     const tbMov = $("tbodyMov");
     tbMov.innerHTML = "";
     movs.forEach(m=>{
@@ -1550,7 +1592,6 @@
       tbMov.appendChild(tr);
     });
 
-    // links
     document.querySelectorAll(".lnkRec").forEach(a=>{
       a.onclick = (e)=>{
         e.preventDefault();
@@ -1577,7 +1618,6 @@
       };
     });
 
-    // imputar habilitación
     const pendientes = state.recibos.filter(r=>r.estado==="pendiente");
     $("btnImputar").disabled = pendientes.length===0;
 
@@ -1594,7 +1634,8 @@
   // ========== UI EVENTS ==========
   function bindUI(){
     $("btnEmitir").onclick = ()=>{
-      $("e_periodo").value = "01/2026";
+      // (pedido) autocompletar período con mes actual, editable
+      $("e_periodo").value = periodoActualMMYYYY();
       $("e_monto").value = "";
       $("e_concepto").value = "Pago mensual";
       show("modalEmitir");
@@ -1756,10 +1797,98 @@
     };
   }
 
+  // ========== AUTH UI ==========
+  function setViewerUI(){
+    $("btnEmitir").classList.add("hide");
+    $("btnImputar").classList.add("hide");
+    $("btnExport").classList.add("hide");
+    $("btnImport").classList.add("hide");
+    $("btnReset").classList.add("hide");
+    $("cardRecibos").classList.add("hide");
+
+    // en visualizador: mantener el login plegado
+    const det = $("authDetails");
+    if(det) det.open = false;
+    const sumTxt = $("authSummaryText");
+    if(sumTxt) sumTxt.textContent = "Acceso (editor)";
+  }
+  function setEditorUI(){
+    $("btnEmitir").classList.remove("hide");
+    $("btnImputar").classList.remove("hide");
+    $("btnExport").classList.remove("hide");
+    $("btnImport").classList.remove("hide");
+    $("btnReset").classList.remove("hide");
+    $("cardRecibos").classList.remove("hide");
+
+    // en editor: abrir el bloque y que quede más claro
+    const det = $("authDetails");
+    if(det) det.open = true;
+    const sumTxt = $("authSummaryText");
+    if(sumTxt) sumTxt.textContent = "Acceso (editor habilitado)";
+  }
+
+  function mountAuthUI(){
+    const authShell = $("authShell");
+    authShell.innerHTML = `
+      <details class="authDetails" id="authDetails">
+        <summary>
+          <span class="dot" aria-hidden="true"></span>
+          <span id="authSummaryText">Acceso (editor)</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:16px;height:16px;opacity:.9">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </summary>
+
+        <div class="auth" id="authBar">
+          <span class="status" id="authStatus">Modo visualizador (solo lectura)</span>
+          <input id="loginEmail" type="email" placeholder="Email editor" />
+          <input id="loginPass" type="password" placeholder="Contraseña" />
+          <button id="btnLogin" class="btn primary">Entrar</button>
+          <button id="btnLogout" class="btn" style="display:none">Salir</button>
+        </div>
+      </details>
+    `;
+
+    const loginEmail = $("loginEmail");
+    const loginPass = $("loginPass");
+    const btnLogin = $("btnLogin");
+    const btnLogout = $("btnLogout");
+
+    btnLogin.onclick = async ()=>{
+      try{
+        await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
+        loginPass.value = "";
+      }catch(e){
+        alert("No pude iniciar sesión. Revisá email/contraseña.");
+        console.error(e);
+      }
+    };
+    btnLogout.onclick = async ()=> { await signOut(auth); };
+  }
+
   // ========== INIT ==========
   mountAuthUI();
   bindUI();
-  bindRealtime();
+
+  onSnapshot(CC_REF, (snap)=>{
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (!data?.state) return;
+
+    const remoteState = data.state;
+    const rrev = remoteState?._meta?.rev || 0;
+
+    if (rrev === lastLocalRev && remoteState?._meta?.updatedBy === clientId) return;
+
+    const cur = state?._meta?.rev || 0;
+    if (rrev <= cur) return;
+
+    applyingRemote = true;
+    state = remoteState;
+    localStorage.setItem(KEY, JSON.stringify(state));
+    render();
+    applyingRemote = false;
+  });
 
   onAuthStateChanged(auth, (user)=>{
     const authStatus = $("authStatus");
