@@ -4,588 +4,124 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cuenta Corriente – Bertinelli / Lin Racioppi</title>
-
 <style>
   :root{
-    --bg:#0b0e14;
-    --panel:#101621;
-    --panel2:#0f1520;
-    --line:#263043;
-    --line2:#2a3852;
-    --text:#e9ecf1;
-    --muted:#8a90a2;
-
-    --primary:#2b6cff;
-    --primary2:#1f4fbf;
-
-    --danger:#b42318;
-    --danger2:#7f1d1d;
-
-    --chip:#0c1220;
-    --chip2:#0a1222;
-
+    --bg:#0f1115;--panel:#171a21;--line:#2a3140;
+    --text:#e9ecf1;--muted:#8a90a2;
+    --primary:#2563eb;--danger:#7f1d1d;
     --err:#fca5a5;
-    --ok:#22c55e;
+    --chip:#111827;
   }
-
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    background:
-      radial-gradient(900px 320px at 25% 0%, rgba(40,95,255,.18), transparent 65%),
-      radial-gradient(900px 420px at 90% -10%, rgba(43,108,255,.12), transparent 60%),
-      linear-gradient(180deg, #070a10 0%, #0b0e14 45%, #0b0e14 100%);
-    color:var(--text);
-  }
-
-  .wrap{max-width:1240px;margin:auto;padding:18px}
-  .top{
-    display:grid;
-    grid-template-columns: 1fr auto;
-    gap:14px;
-    align-items:start;
-    position:relative; /* necesario para popup login */
-    margin-bottom:14px;
-  }
-
-  .titleBlock{
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    min-width:0;
-  }
-  h1{
-    margin:0;
-    font-size:22px;
-    letter-spacing:.2px;
-    font-weight:950;
-  }
-  .subline{
-    color:rgba(233,236,241,.78);
-    font-size:12px;
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .modeTag{
-    padding:4px 10px;
-    border:1px solid var(--line2);
-    border-radius:999px;
-    background:rgba(255,255,255,.04);
-    font-weight:850;
-    font-size:12px;
-  }
-
-  /* ====== GRID CABECERA (saldo + acciones) ====== */
-  .headGrid{
-    display:grid;
-    grid-template-columns: minmax(320px, 420px) 1fr;
-    gap:14px;
-    align-items:stretch;
-    margin-bottom:14px;
-  }
-  @media (max-width:980px){
-    .headGrid{grid-template-columns:1fr}
-  }
-
-  .saldoCard{
-    background:
-      radial-gradient(420px 220px at 30% 0%, rgba(43,108,255,.35), transparent 55%),
-      linear-gradient(180deg, rgba(18,26,44,.92), rgba(13,18,30,.92));
-    border:1px solid rgba(90,120,190,.35);
-    border-radius:18px;
-    padding:14px 14px 12px;
-    box-shadow: 0 18px 50px rgba(0,0,0,.45);
-    overflow:hidden;
-  }
-  .saldoTitle{
-    font-size:13px;
-    color:rgba(233,236,241,.85);
-    font-weight:900;
-    letter-spacing:.2px;
-    margin-bottom:6px;
-  }
-  .saldoValue{
-    font-size:34px;
-    font-weight:1000;
-    margin:0;
-    line-height:1.05;
-    letter-spacing:.3px;
-  }
-  .saldoMeta{
-    margin-top:8px;
-    color:rgba(233,236,241,.75);
-    font-size:12.5px;
-    line-height:1.35;
-  }
-
-  .actions{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:flex-start;
-    justify-content:flex-end;
-  }
-  @media (max-width:980px){
-    .actions{justify-content:flex-start}
-  }
-
-  .btn{
-    border:1px solid var(--line2);
-    background:rgba(255,255,255,.06);
-    color:var(--text);
-    padding:10px 12px;
-    border-radius:14px;
-    font-weight:900;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    transition: transform .06s ease, background .12s ease, border-color .12s ease;
-    white-space:nowrap;
-  }
-  .btn:hover{background:rgba(255,255,255,.09)}
-  .btn:active{transform:translateY(1px)}
-  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-
-  .btn.primary{
-    background:linear-gradient(180deg, rgba(43,108,255,.95), rgba(31,79,191,.95));
-    border-color: rgba(110,150,255,.55);
-  }
-  .btn.primary:hover{background:linear-gradient(180deg, rgba(43,108,255,1), rgba(31,79,191,1))}
-  .btn.danger{
-    background:linear-gradient(180deg, rgba(180,35,24,.95), rgba(127,29,29,.95));
-    border-color: rgba(255,140,140,.35);
-  }
-
-  /* botón acuerdo "llamativo pero no protagonista" */
-  .btn.acuerdo{
-    background:
-      radial-gradient(120px 80px at 20% 30%, rgba(43,108,255,.40), transparent 65%),
-      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-    border-color: rgba(140,175,255,.35);
-    box-shadow: 0 10px 26px rgba(0,0,0,.30);
-  }
-  .btn svg{width:18px;height:18px;opacity:.95}
-
-  /* ===== CARDS ===== */
-  .card{
-    background:linear-gradient(180deg, rgba(16,22,33,.92), rgba(12,16,24,.92));
-    border:1px solid rgba(70,90,130,.35);
-    border-radius:18px;
-    padding:14px;
-    margin:12px 0;
-    box-shadow: 0 14px 38px rgba(0,0,0,.35);
-  }
-  .cardHeader{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    min-width:0;
-  }
-  .cardHeaderLeft{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    min-width:0;
-  }
-  .iconDot{
-    width:28px;height:28px;border-radius:999px;
-    display:inline-flex;align-items:center;justify-content:center;
-    background:rgba(43,108,255,.18);
-    border:1px solid rgba(140,175,255,.25);
-    flex:0 0 auto;
-  }
-  .iconDot svg{width:16px;height:16px}
-  .h2{
-    margin:0;
-    font-size:16px;
-    font-weight:950;
-  }
-  .hint{
-    margin:2px 0 0 0;
-    font-size:12px;
-    color:rgba(233,236,241,.65);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-
-  /* details desplegables (cabecera/anexo/plan) */
-  details.sectionDetails{
-    border:none;
-    padding:0;
-  }
-  details.sectionDetails > summary{
-    list-style:none;
-    cursor:pointer;
-    user-select:none;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-  }
-  details.sectionDetails > summary::-webkit-details-marker{display:none}
-  .verMas{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 12px;
-    border-radius:999px;
-    border:1px solid var(--line2);
-    background:rgba(255,255,255,.05);
-    font-weight:950;
-    font-size:12px;
-    color:rgba(233,236,241,.92);
-  }
-  .verMas svg{width:14px;height:14px;opacity:.9;transition:transform .12s ease}
-  details[open] .verMas svg{transform:rotate(180deg)}
-
-  .sectionBody{
-    padding-top:12px;
-    border-top:1px solid rgba(70,90,130,.25);
-    margin-top:12px;
-  }
-  .kv{
-    display:grid;
-    grid-template-columns: 220px 1fr;
-    gap:10px 14px;
-    align-items:start;
-    font-size:13px;
-  }
-  @media (max-width:700px){
-    .kv{grid-template-columns:1fr}
-  }
-  .k{color:rgba(233,236,241,.68);font-weight:800}
-  .v{color:rgba(233,236,241,.92);font-weight:850}
-  .mono{font-variant-numeric: tabular-nums}
-
-  /* ===== TABLAS ===== */
-  table{width:100%;border-collapse:collapse;margin-top:10px}
-  th,td{border-bottom:1px solid rgba(70,90,130,.28);padding:10px 10px;vertical-align:top}
-  th{color:rgba(233,236,241,.66);text-align:left;font-weight:950;font-size:12px}
-  td{font-size:13px;color:rgba(233,236,241,.92)}
-  td.num{text-align:right;white-space:nowrap;font-variant-numeric: tabular-nums}
-  td.conceptCell{
-    white-space:normal !important;
-    word-break:normal;
-    overflow-wrap:anywhere;
-    line-height:1.35;
-  }
-  .small{font-size:12px;color:rgba(233,236,241,.62)}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1200px;margin:auto;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
+  h1{margin:0 0 6px 0;font-size:20px}
+  h2{margin:0 0 8px 0;font-size:15px;color:var(--muted)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+  .badge{border:1px solid var(--line);padding:6px 12px;border-radius:999px;background:var(--chip)}
+  .btn{border:1px solid var(--line);background:#222733;color:var(--text);padding:8px 12px;border-radius:10px;font-weight:650;cursor:pointer}
+  .btn.primary{background:var(--primary);border-color:#1d4ed8}
+  .btn.danger{background:var(--danger);border-color:#991b1b}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .muted{color:var(--muted);font-size:12px}
+  .small{font-size:12px;color:var(--muted)}
+  .err{font-size:12px;color:var(--err)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+  th{color:var(--muted);text-align:left;font-weight:650}
+  td.num{text-align:right;white-space:nowrap}
   a{color:#93c5fd;text-decoration:none}
   a:hover{text-decoration:underline}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  input,select,textarea{background:#0f1115;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+  textarea{min-height:70px;resize:vertical}
+  hr{border:none;border-top:1px solid var(--line);margin:10px 0}
 
-  /* ===== Responsive tables: SIN scroll horizontal, pero SIN "cuadros" =====
-     En mobile: cada fila se apila verticalmente usando data-label, con separador.
-     En desktop: tabla normal.
-  */
-  @media (max-width:760px){
-    table.responsive thead{display:none}
-    table.responsive tr{
-      display:block;
-      border:1px solid rgba(70,90,130,.22);
-      border-radius:14px;
-      padding:10px;
-      margin:10px 0;
-      background:rgba(255,255,255,.03);
-    }
-    table.responsive td{
-      display:grid;
-      grid-template-columns: 140px 1fr;
-      gap:10px;
-      padding:7px 4px;
-      border:none;
-    }
-    table.responsive td::before{
-      content: attr(data-label);
-      color:rgba(233,236,241,.60);
-      font-weight:900;
-      font-size:12px;
-      line-height:1.2;
-    }
-    table.responsive td.num{white-space:normal;text-align:left}
-  }
-
-  /* ===== MODALES (más opacos y legibles) ===== */
   .modal{
     position:fixed; inset:0;
     display:none;
-    background:rgba(0,0,0,.72);
-    padding:16px;
+    background:rgba(0,0,0,.6);
+    padding:14px;
     overflow:auto;
     -webkit-overflow-scrolling: touch;
-    align-items:center;
+    align-items:stretch;
     justify-content:center;
-    z-index:80;
   }
   .modal.show{display:flex}
-  .modal .card{
-    width:min(920px, 100%);
-    margin:auto;
-    background:linear-gradient(180deg, rgba(18,24,36,.96), rgba(12,16,24,.96));
-    border:1px solid rgba(140,175,255,.22);
-  }
+  .modal .card{ max-width:920px; width:100%; margin:auto; }
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  #i_preview img{ max-height:40vh; width:auto; display:block; }
 
-  input,select,textarea{
-    background:rgba(0,0,0,.28);
-    color:var(--text);
-    border:1px solid rgba(70,90,130,.35);
-    border-radius:14px;
-    padding:11px 12px;
-    width:100%;
-    outline:none;
-  }
-  input:focus,select:focus,textarea:focus{border-color:rgba(140,175,255,.55)}
-  textarea{min-height:80px;resize:vertical}
-  hr{border:none;border-top:1px solid rgba(70,90,130,.28);margin:10px 0}
-  .err{font-size:12px;color:var(--err)}
-  .ck{display:flex;gap:10px;align-items:flex-start}
+  .ck{display:flex;gap:8px;align-items:flex-start}
   .ck input{width:auto;margin-top:3px}
-
-  /* ===== LOGIN COLLAPSIBLE (CHIP MINI) ===== */
-  details.authDetails{
-    border:none;
-    background: transparent;
-    overflow: visible;
-    justify-self:end;
-    align-self:start;
-  }
-  details.authDetails > summary{
-    list-style:none;
-    cursor:pointer;
-    user-select:none;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    padding:6px 10px;
-    border-radius:999px;
-    background: rgba(255,255,255,.05);
-    border:1px solid var(--line2);
-    width:auto;
-    height:auto;
-  }
-  details.authDetails > summary::-webkit-details-marker{display:none}
-  .authSummary{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    font-weight:950;
-    color: rgba(233,236,241,.88);
-  }
-  .authSummary .txt{font-size:12px; line-height:1}
-  .authSummary svg{width:14px;height:14px;opacity:.85}
-  details.authDetails[open] .authSummary svg{transform: rotate(180deg)}
-  .authSummary .dot{
-    width:8px;height:8px;border-radius:999px;
-    background: rgba(147,161,182,.35);
-    border:1px solid rgba(147,161,182,.35);
-  }
-  details.authDetails > .auth{
-    margin-top:10px;
-    width: min(360px, calc(100vw - 36px));
-    padding:12px;
-    border-radius:16px;
-    background: rgba(10,12,18,.92);
-    border:1px solid var(--line2);
-    box-shadow: 0 18px 45px rgba(0,0,0,.45);
-    position:absolute;
-    right: 18px;
-    top: 54px;
-    z-index: 70;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:flex-start;
-  }
-
-  /* botón Entrar SIN color (como pediste) */
-  #btnLogin{
-    background:rgba(255,255,255,.06) !important;
-    border-color: var(--line2) !important;
-  }
-  #btnLogin:hover{background:rgba(255,255,255,.09) !important}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-  <div class="top">
-    <div class="titleBlock">
+  <div class="row">
+    <div>
       <h1>Cuenta Corriente – Bertinelli / Lin Racioppi</h1>
-      <div class="subline">
-        <span class="modeTag" id="modeTag">Modo visualizador</span>
-        <span id="authStatusText" class="small">Solo lectura.</span>
-      </div>
+      <div id="authBar" class="muted"></div>
     </div>
-
-    <!-- Acceso mini desplegable -->
-    <details class="authDetails" id="authDetails">
-      <summary>
-        <span class="authSummary">
-          <span class="dot" id="authDot"></span>
-          <span class="txt" id="authTxt"></span>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </summary>
-
-      <div class="auth">
-        <input id="loginEmail" placeholder="Email editor" style="flex:1 1 220px;min-width:180px"/>
-        <input id="loginPass" placeholder="Contraseña" type="password" style="flex:1 1 170px;min-width:150px"/>
-        <button id="btnLogin" class="btn">Entrar</button>
-        <button id="btnLogout" class="btn" style="display:none">Salir</button>
-      </div>
-    </details>
-  </div>
-
-  <div class="headGrid">
-    <div class="saldoCard">
-      <div class="saldoTitle">Saldo actual – cuenta corriente</div>
-      <div class="saldoValue mono" id="saldoBig">U$S —</div>
-      <div class="saldoMeta" id="saldoMeta">—</div>
-    </div>
-
-    <div class="actions" id="btnBar">
-      <button class="btn acuerdo" id="btnPrintPlan" title="Abrir acuerdo + plan de pagos">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l3 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M8 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Ver acuerdo + plan de pagos
-      </button>
-
+    <div class="right" id="btnBar">
+      <span class="badge" id="saldoBadge">Saldo: —</span>
       <button class="btn primary" id="btnEmitir">Emitir recibo</button>
       <button class="btn primary" id="btnImputar">Imputar pago</button>
+      <button class="btn" id="btnPrintPlan"> Ver Acuerdo + Plan de Pagos </button>
       <button class="btn" id="btnExport">Exportar JSON</button>
       <button class="btn" id="btnImport">Importar JSON</button>
       <button class="btn danger" id="btnReset">Reset TOTAL</button>
     </div>
   </div>
 
-  <!-- Cabecera (por defecto cerrado) -->
   <div class="card">
-    <details class="sectionDetails" id="detCabecera">
-      <summary>
-        <div class="cardHeaderLeft">
-          <span class="iconDot">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 17h.01M12 10v4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </span>
-          <div style="min-width:0">
-            <div class="h2">Cabecera</div>
-            <div class="hint">Escritura, inmueble, partes</div>
-          </div>
-        </div>
-        <span class="verMas">
-          Ver más
-          <svg viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </summary>
-
-      <div class="sectionBody">
-        <div class="kv">
-          <div class="k">Escritura / Registro</div><div class="v"><b>Escritura Nº 434</b> – Registro Notarial Nº <b>30</b></div>
-          <div class="k">Escribano</div><div class="v">Norberto Gustavo Soler</div>
-          <div class="k">Operación</div><div class="v">Compraventa inmueble – 25 de Mayo 8, 6º C, Ciudadela</div>
-          <div class="k">Partes</div><div class="v">Vendedor: José Orlando Bertinelli · Comprador: Lautaro Nahuel Lin Racioppi</div>
-        </div>
-      </div>
-    </details>
+    <h2>Cabecera</h2>
+    <div><b>Escritura Nº 434</b> – Registro Notarial Nº <b>30</b> – Escribano: <b>Norberto Gustavo Soler</b></div>
+    <div>Operación: <b>Compraventa inmueble – 25 de Mayo 8, 6º C, Ciudadela</b></div>
+    <div>Vendedor: <b>José Orlando Bertinelli</b> · Comprador: <b>Lautaro Nahuel Lin Racioppi</b></div>
   </div>
 
-  <!-- Anexo económico (por defecto cerrado) -->
   <div class="card">
-    <details class="sectionDetails" id="detAnexo">
-      <summary>
-        <div class="cardHeaderLeft">
-          <span class="iconDot">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </span>
-          <div style="min-width:0">
-            <div class="h2">Anexo económico</div>
-            <div class="hint">Precios, crédito, saldo inicial</div>
-          </div>
-        </div>
-        <span class="verMas">
-          Ver más
-          <svg viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </summary>
-
-      <div class="sectionBody">
-        <div class="kv mono">
-          <div class="k">Precio solicitado</div><div class="v">USD 44.000</div>
-          <div class="k">Precio escriturado</div><div class="v">USD 41.000</div>
-          <div class="k">Crédito Banco Nación</div><div class="v">USD 30.850</div>
-          <div class="k">Entrega inicial</div><div class="v">USD 5.000</div>
-          <div class="k">Saldo inicial en cuenta corriente</div><div class="v">USD 8.150</div>
-        </div>
-      </div>
-    </details>
+    <h2>Anexo económico</h2>
+    <div>Precio solicitado: USD 44.000</div>
+    <div>Precio escriturado: USD 41.000</div>
+    <div>Crédito Banco Nación: USD 30.850</div>
+    <div>Entrega inicial: USD 5.000</div>
+    <div>Saldo inicial convenido en cuenta corriente: USD 8.150</div>
   </div>
 
-  <!-- Plan (por defecto cerrado) -->
   <div class="card">
-    <details class="sectionDetails" id="detPlan">
-      <summary>
-        <div class="cardHeaderLeft">
-          <span class="iconDot">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M7 7h14M7 12h14M7 17h14M3 7h.01M3 12h.01M3 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </span>
-          <div style="min-width:0">
-            <div class="h2">Plan de pagos proyectado</div>
-            <div class="hint">Detalle por período</div>
-          </div>
-        </div>
-        <span class="verMas">
-          Ver más
-          <svg viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </summary>
-
-      <div class="sectionBody">
-        <table class="responsive" id="tblPlan">
-          <thead>
-            <tr>
-              <th style="width:120px">Período</th>
-              <th>Concepto</th>
-              <th style="width:120px;text-align:right">Monto</th>
-              <th style="width:160px">Estado</th>
-              <th style="width:150px;text-align:right">Saldo proyectado</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyPlan"></tbody>
-        </table>
-      </div>
-    </details>
-  </div>
-
-  <!-- Recibos emitidos (NO visible en modo visualizador) -->
-  <div class="card" id="cardRecibos">
-    <div class="cardHeader">
-      <div class="cardHeaderLeft">
-        <span class="iconDot">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10v18l-2-1-3 1-3-1-2 1V3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 7h6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-        <div>
-          <div class="h2">Recibos emitidos</div>
-          <div class="hint">Emisión y estado</div>
-        </div>
-      </div>
+    <div class="row" style="align-items:flex-end">
+      <h2 style="margin:0">Plan de pagos proyectado</h2>
+      <div class="muted" id="planResumen">—</div>
     </div>
-
-    <table class="responsive" id="tblRec">
+    <table>
       <thead>
         <tr>
-          <th style="width:120px">Período</th>
+          <th style="width:110px">Período</th>
           <th>Concepto</th>
-          <th style="width:120px;text-align:right">Monto</th>
-          <th style="width:180px">Recibo</th>
+          <th class="num" style="width:120px">Monto (U$S)</th>
+          <th style="width:200px">Estado</th>
+          <th class="num" style="width:150px">Saldo proyectado</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyPlan"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Recibos emitidos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Período</th>
+          <th>Concepto</th>
+          <th class="num" style="width:120px">Monto (U$S)</th>
+          <th style="width:220px">Recibo</th>
           <th style="width:140px">Estado</th>
         </tr>
       </thead>
@@ -593,28 +129,16 @@
     </table>
   </div>
 
-  <!-- Libro de movimientos -->
   <div class="card">
-    <div class="cardHeader">
-      <div class="cardHeaderLeft">
-        <span class="iconDot">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4V4Z" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-        <div>
-          <div class="h2">Libro de movimientos</div>
-          <div class="hint">Débitos, créditos y adjuntos</div>
-        </div>
-      </div>
-    </div>
-
-    <table class="responsive" id="tblMov">
+    <h2>Libro de movimientos</h2>
+    <table>
       <thead>
         <tr>
-          <th style="width:120px">Período</th>
+          <th style="width:110px">Período</th>
           <th>Concepto</th>
-          <th style="width:120px;text-align:right">Débito</th>
-          <th style="width:120px;text-align:right">Crédito</th>
-          <th style="width:120px;text-align:right">Saldo</th>
+          <th class="num" style="width:110px">Débito</th>
+          <th class="num" style="width:110px">Crédito</th>
+          <th class="num" style="width:110px">Saldo</th>
           <th style="width:190px">Adjunto</th>
         </tr>
       </thead>
@@ -627,18 +151,7 @@
 <!-- Modal Emitir -->
 <div class="modal" id="modalEmitir">
   <div class="card">
-    <div class="cardHeader" style="margin-bottom:10px">
-      <div class="cardHeaderLeft">
-        <span class="iconDot">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-        <div>
-          <div class="h2">Emitir recibo</div>
-          <div class="hint">Se genera el recibo A5 para imprimir/compartir</div>
-        </div>
-      </div>
-    </div>
-
+    <h2>Emitir recibo</h2>
     <div class="grid">
       <div>
         <div class="small">Período (MM/AAAA)</div>
@@ -653,8 +166,7 @@
         <input id="e_concepto" value="Pago mensual" />
       </div>
     </div>
-
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
       <button class="btn" id="e_cancel">Cancelar</button>
       <button class="btn primary" id="e_save">Emitir</button>
     </div>
@@ -664,35 +176,21 @@
 <!-- Modal Imputar -->
 <div class="modal" id="modalImputar">
   <div class="card">
-    <div class="cardHeader" style="margin-bottom:10px">
-      <div class="cardHeaderLeft">
-        <span class="iconDot">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M20 7l-9 9-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-        <div>
-          <div class="h2">Imputar pago</div>
-          <div class="hint">Adjuntar recibo firmado (imagen o PDF)</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="small" style="color:rgba(233,236,241,.70)">El adjunto es obligatorio y debe ser el recibo firmado por ambas partes.</div>
+    <h2>Imputar pago (obligatorio adjuntar recibo firmado)</h2>
+    <div class="muted">El archivo adjunto debe ser una imagen o PDF del recibo firmado por ambas partes.</div>
     <hr>
-
     <div class="grid">
       <div>
         <div class="small">Recibo pendiente</div>
         <select id="i_recibo"></select>
       </div>
-
       <div>
-        <div class="small">Adjuntar recibo firmado</div>
+        <div class="small">Adjuntar recibo firmado (foto/scan/PDF)</div>
         <input id="i_file" type="file" accept="image/*,application/pdf" />
         <div class="small" id="i_file_info" style="margin-top:6px"></div>
         <div class="err" id="i_file_err" style="margin-top:4px"></div>
         <div id="i_preview" style="margin-top:10px"></div>
       </div>
-
       <div style="grid-column:1/-1">
         <div class="small">Observación (opcional)</div>
         <textarea id="i_obs" placeholder="Ej.: se adjunta foto del recibo firmado."></textarea>
@@ -704,7 +202,7 @@
       <div class="small">Declaro que el adjunto corresponde al recibo seleccionado y que se encuentra firmado por ambas partes.</div>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
       <button class="btn" id="i_cancel">Cancelar</button>
       <button class="btn primary" id="i_confirm">Imputar</button>
     </div>
@@ -728,6 +226,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
+
   const CC_REF = doc(db, "cuentas", "bertinelli-lin");
 
   const CLIENT_ID_KEY = "cc_client_id";
@@ -773,13 +272,6 @@
     function hide(id){ $(id).classList.remove("show"); }
     function isPeriodo(x){ return /^\d{2}\/\d{4}$/.test(String(x||"").trim()); }
 
-    function periodoMesActual(){
-      const d = new Date();
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const yyyy = String(d.getFullYear());
-      return `${mm}/${yyyy}`;
-    }
-
     function makeInitialState(){
       return {
         meta:{
@@ -808,6 +300,7 @@
       if(!confirm("Reset TOTAL: borra local y Firebase. ¿Seguro?")) return;
 
       localStorage.removeItem(KEY);
+
       const fresh = makeInitialState();
       fresh._meta = { rev: 1, updatedAt: Date.now(), updatedBy: clientId };
 
@@ -895,7 +388,7 @@
       });
     }
 
-    // ===== MAILTO (texto) =====
+    // ===== MAILTO (Spark-friendly) =====
     function abrirMailImputacion({ to, cc, subject, body }) {
       const enc = encodeURIComponent;
       const normalized = String(body || "").replace(/\n/g, "\r\n");
@@ -972,7 +465,9 @@
     }
 
     // ======================
-    // RECIBO (A5 apaisado) — 1 sola hoja + bordes
+    // RECIBO (A5 apaisado) + RESPONSIVE
+    // Desktop: IMPRIMIR
+    // Mobile: COMPARTIR
     // ======================
     function openReciboPrint(state, rec, modo, saldoLuego){
       const isImputado = (modo === "imputado");
@@ -998,11 +493,10 @@
 <title>${docTitle}</title>
 <style>
   @page{ size:A5 landscape; margin:10mm; }
-
+  :root{ --barH:56px; }
   html,body{ height:100%; }
   body{ margin:0; font-family:system-ui,Segoe UI,Arial; color:#111; background:#fff; }
 
-  :root{ --barH:56px; }
   .topbar{
     position: sticky;
     top:0;
@@ -1016,7 +510,7 @@
     background:#fff;
     border-bottom: 1px solid #e5e7eb;
   }
-  .ttl{
+  .topbar .ttl{
     font-size:14px;
     font-weight:900;
     white-space:nowrap;
@@ -1032,66 +526,64 @@
     cursor:pointer;
   }
 
-  /* Hoja: borde en 1 sola hoja */
   .sheet{
-    border: 2px solid #111;
-    border-radius: 10px;
+    background:#fff;
+    border:1px solid #111;
+    border-radius:10px;
+    box-sizing:border-box;
+
     width: min(1100px, calc(100vw - 24px));
     margin: 12px auto;
     padding: 14px;
     min-height: calc(100dvh - var(--barH) - 24px);
-    box-sizing:border-box;
-    background:#fff;
-    display:flex;
-    flex-direction:column;
   }
 
-  p{
+  p, li{
     text-align: justify;
     text-justify: inter-word;
     hyphens: auto;
     -webkit-hyphens: auto;
+    -ms-hyphens: auto;
     overflow-wrap: break-word;
-    margin:0 0 10px 0;
   }
 
   .h1{font-size:20px;font-weight:900;margin:0 0 4px 0}
   .sub{font-size:14px;color:#333;margin:0 0 10px 0}
-  .txt{font-size:15.2px;line-height:1.62}
+  .txt{font-size:15.5px;line-height:1.65;margin:0 0 10px 0}
   .b{font-weight:900}
   .upper{font-weight:900;text-transform:uppercase}
+
   .kv{margin:8px 0;font-size:15px}
   .k{color:#222}
 
-  .grow{flex:1}
+  .vbox{ display:flex; flex-direction:column; min-height:100%; }
+  .grow{ flex:1; }
 
-  .sigGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+  .sigGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px}
   .lineLabel{font-size:12.5px;color:#333;margin-top:6px}
   .line{border-top:1px solid #111;margin-top:18px}
 
   @media (max-width: 900px){
     .sheet{
-      width:100vw; margin:0;
+      width:100vw;
+      margin:0;
       border-radius:0;
-      border-left:none;border-right:none;
+      border-left:none;
+      border-right:none;
       min-height: calc(100dvh - var(--barH));
       padding: 16px;
-      border-top:2px solid #111;
-      border-bottom:2px solid #111;
     }
   }
 
   @media print{
     .topbar{ display:none; }
-    body{ background:#fff; }
     .sheet{
+      border:1px solid #111;
+      border-radius:10px;
       width:100%;
       margin:0;
       padding:10mm;
-      min-height:auto;
-      /* importante: que no se pase de una hoja */
-      page-break-inside: avoid;
-      break-inside: avoid;
+      min-height:148mm;
     }
   }
 </style>
@@ -1104,41 +596,43 @@
 </div>
 
 <div class="sheet">
-  <div>
-    <div class="h1">RECIBO N° ${rec.numero}</div>
-    <div class="sub">Cuenta Corriente – Bertinelli / Lin Racioppi</div>
-
-    <p class="txt">
-      En la ciudad de Buenos Aires, en el mes de <span class="b">${mes} de ${yyyy}</span>,
-      recibí de <span class="b">${state.meta.comprador}</span> la suma de
-      <span class="upper">${montoLinea}</span>,
-      en concepto de pago a cuenta del saldo pendiente de la operación de compraventa instrumentada mediante
-      <span class="b">Escritura N° ${state.meta.escritura_num}</span> (Registro Notarial N° ${state.meta.registro}).
-    </p>
-
-    <div class="kv"><span class="k">Concepto:</span> <span class="b">${rec.concepto}</span></div>
-    <div class="kv"><span class="k">Período imputado:</span> <span class="b">${rec.periodo}</span></div>
-
-    ${saldoBlock}
-  </div>
-
-  <div class="grow"></div>
-
-  <div class="sigGrid">
+  <div class="vbox">
     <div>
-      <div class="line"></div>
-      <div class="lineLabel">Firma comprador</div>
+      <div class="h1">RECIBO N° ${rec.numero}</div>
+      <div class="sub">Cuenta Corriente – Bertinelli / Lin Racioppi</div>
 
-      <div class="line"></div>
-      <div class="lineLabel">${state.meta.comprador} / ${state.meta.dni_comprador}</div>
+      <p class="txt">
+        En la ciudad de Buenos Aires, en el mes de <span class="b">${mes} de ${yyyy}</span>,
+        recibí de <span class="b">${state.meta.comprador}</span> la suma de
+        <span class="upper">${montoLinea}</span>,
+        en concepto de pago a cuenta del saldo pendiente de la operación de compraventa instrumentada mediante
+        <span class="b">Escritura N° ${state.meta.escritura_num}</span> (Registro Notarial N° ${state.meta.registro}).
+      </p>
+
+      <div class="kv"><span class="k">Concepto:</span> <span class="b">${rec.concepto}</span></div>
+      <div class="kv"><span class="k">Período imputado:</span> <span class="b">${rec.periodo}</span></div>
+
+      ${saldoBlock}
     </div>
 
-    <div>
-      <div class="line"></div>
-      <div class="lineLabel">Firma vendedor</div>
+    <div class="grow"></div>
 
-      <div class="line"></div>
-      <div class="lineLabel">${state.meta.vendedor} / ${state.meta.dni_vendedor}</div>
+    <div class="sigGrid">
+      <div>
+        <div class="line"></div>
+        <div class="lineLabel">Firma comprador</div>
+
+        <div class="line"></div>
+        <div class="lineLabel">${state.meta.comprador} / ${state.meta.dni_comprador}</div>
+      </div>
+
+      <div>
+        <div class="line"></div>
+        <div class="lineLabel">Firma vendedor</div>
+
+        <div class="line"></div>
+        <div class="lineLabel">${state.meta.vendedor} / ${state.meta.dni_vendedor}</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1149,7 +643,11 @@
     const file = new File([html], ${JSON.stringify(fileName)}, { type:"text/html" });
 
     if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ title: ${JSON.stringify(docTitle)}, text: ${JSON.stringify(docTitle)}, files: [file] });
+      await navigator.share({
+        title: ${JSON.stringify(docTitle)},
+        text: ${JSON.stringify(docTitle)},
+        files: [file]
+      });
       return true;
     }
 
@@ -1197,7 +695,9 @@
     }
 
     // ======================
-    // ADJUNTO
+    // ADJUNTO: RESPONSIVE
+    // Desktop: IMPRIMIR
+    // Mobile: COMPARTIR
     // ======================
     function abrirAdjunto(adjunto){
       const w = window.open("", "_blank");
@@ -1300,7 +800,11 @@
     const file = new File([blob], ${JSON.stringify(safeName)}, { type: ${JSON.stringify(adjunto.type || "application/octet-stream")} });
 
     if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ title: ${JSON.stringify(title)}, text: ${JSON.stringify(title)}, files: [file] });
+      await navigator.share({
+        title: ${JSON.stringify(title)},
+        text: ${JSON.stringify(title)},
+        files: [file]
+      });
       return true;
     }
 
@@ -1346,7 +850,9 @@
     }
 
     // ==========================
-    // ACUERDO + ANEXO (texto EXACTO que pasaste)
+    // ACUERDO + ANEXO
+    // Desktop: IMPRIMIR
+    // Mobile: COMPARTIR
     // ==========================
     function printPlanYAcuerdo(state){
       const plan = aplicarPagosAlPlan(generarPlanBase(state), state);
@@ -1367,10 +873,12 @@
       const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
       const fecha = `${fechaObj.getDate()} de ${meses[fechaObj.getMonth()]} de ${fechaObj.getFullYear()}`;
 
-      // TEXTO REAL (igual al que pegaste)
-      const acuerdoTxt = `
+      const acuerdo = `
         <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
+        <div class="titleGap"></div>
+
         <p class="fecha">Buenos Aires, ${fecha}</p>
+        <div class="dateGap"></div>
 
         <p>
           Entre el Sr. <b>${state.meta.vendedor}</b>, DNI ${state.meta.dni_vendedor}, en adelante <b>EL VENDEDOR</b>,
@@ -1379,20 +887,20 @@
         </p>
 
         <p><b>PRIMERA – Antecedentes.</b> Las partes manifiestan que celebraron la compraventa del inmueble sito en
-          <b>${state.meta.inmueble}</b>, instrumentada mediante Escritura Pública Nº <b>${state.meta.escritura_num}</b>,
-          pasada ante el Registro Notarial Nº <b>${state.meta.registro}</b>, referida al mes de <b>${state.meta.ref_mes}</b>.
+          <b>${state.meta.inmueble}</b>, instrumentada mediante <b>Escritura Pública Nº ${state.meta.escritura_num}</b>,
+          pasada ante el <b>Registro Notarial Nº ${state.meta.registro}</b>, referida al mes de <b>${state.meta.ref_mes}</b>.
         </p>
 
         <p><b>SEGUNDA – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó
-          en concepto de entrega inicial la suma de <b>U$S ${fmt(state.meta.entrega_inicial)}</b>, quedando el saldo convenido
-          en cuenta corriente determinado en función de dicha entrega.
+          en concepto de entrega inicial la suma de <b>U$S ${fmt(state.meta.entrega_inicial)}</b>, quedando el saldo
+          convenido en cuenta corriente determinado en función de dicha entrega.
         </p>
 
         <p><b>TERCERA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por
           <b>U$S ${fmt(state.meta.saldo_inicial)}</b>.
         </p>
 
-        <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) enero 2026: U$S 150;
+        <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) <b>enero 2026</b>: U$S 150;
           b) desde el período siguiente: pagos mensuales de referencia de U$S 500 hasta cancelar el saldo.
         </p>
 
@@ -1400,7 +908,8 @@
           Dichos adelantos se imputarán al saldo y acortarán la duración total del plan.
         </p>
 
-        <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar el saldo hasta cero.
+        <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar el saldo
+          hasta cero.
         </p>
 
         <p><b>SÉPTIMA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
@@ -1471,17 +980,22 @@
       }
     }
 
-    p{
+    p, li{
       text-align: justify;
       text-justify: inter-word;
       hyphens: auto;
       -webkit-hyphens: auto;
+      -ms-hyphens: auto;
       overflow-wrap: break-word;
-      line-height:1.78; margin:0 0 12px 0; font-size:15.8px;
     }
-    h1{ font-size:22px; margin:0 0 12px 0; text-align:center; letter-spacing:.2px; }
-    h2{ font-size:17px; margin:18px 0 10px 0; }
+
+    p{ line-height:1.78; margin:0 0 12px 0; font-size:15.8px; }
+    h1{ font-size:22px; margin:0; text-align:center; letter-spacing:.2px; }
+    h2{ font-size:17px; margin:0 0 10px 0; }
     .small{ font-size:14.2px; color:#333; }
+
+    .titleGap{ height:14mm; }
+    .dateGap{ height:10mm; }
 
     table{ width:100%; border-collapse: collapse; margin:12px 0; font-size:13.8px; }
     th,td{ border:1px solid #000; padding:6px; vertical-align:top; }
@@ -1498,7 +1012,9 @@
     @media print{
       body{ background:#fff; }
       .noprint{ display:none; }
-      .sheet{ width:auto; min-height:auto; margin:0; padding:0; box-shadow:none; }
+      .sheet{
+        width:auto; min-height:auto; margin:0; padding:0; box-shadow:none;
+      }
     }
   </style>
 </head>
@@ -1508,7 +1024,7 @@
   </div>
 
   <div class="sheet">
-    ${acuerdoTxt}
+    ${acuerdo}
     <div class="pageBreak"></div>
 
     <h2>ANEXO PLAN DE PAGOS</h2>
@@ -1532,6 +1048,8 @@
   </div>
 
   <script>
+    document.title = ${JSON.stringify(docTitle)};
+
     async function shareHtml(){
       const html = document.documentElement.outerHTML;
       const file = new File([html], "acuerdo_y_anexo.html", { type:"text/html" });
@@ -1584,33 +1102,33 @@
       try { w.document.title = docTitle; } catch(e) {}
     }
 
-    // ========== AUTH ==========
-    const authDetails = $("authDetails");
-    const authDot = $("authDot");
-    const authTxt = $("authTxt");
-    const modeTag = $("modeTag");
-    const authStatusText = $("authStatusText");
+    // ========== AUTH UI ==========
+    const authBar = $("authBar");
+    authBar.innerHTML = `
+      <span id="authStatus">Modo visualizador</span>
+      <span style="opacity:.7"> · </span>
+      <input id="loginEmail" placeholder="Email editor" style="max-width:220px" />
+      <input id="loginPass" placeholder="Contraseña" type="password" style="max-width:160px" />
+      <button id="btnLogin" class="btn primary">Entrar</button>
+      <button id="btnLogout" class="btn" style="display:none">Salir</button>
+    `;
 
     const loginEmail = $("loginEmail");
     const loginPass = $("loginPass");
     const btnLogin = $("btnLogin");
     const btnLogout = $("btnLogout");
+    const authStatus = $("authStatus");
 
     btnLogin.onclick = async ()=>{
       try{
         await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPass.value);
         loginPass.value = "";
-        // cerrar el desplegable al entrar
-        authDetails.open = false;
       }catch(e){
         alert("No pude iniciar sesión. Revisá email/contraseña.");
         console.error(e);
       }
     };
-    btnLogout.onclick = async ()=> {
-      await signOut(auth);
-      authDetails.open = false;
-    };
+    btnLogout.onclick = async ()=> { await signOut(auth); };
 
     function setViewerUI(){
       $("btnEmitir").style.display = "none";
@@ -1618,14 +1136,6 @@
       $("btnExport").style.display = "none";
       $("btnImport").style.display = "none";
       $("btnReset").style.display = "none";
-      $("cardRecibos").style.display = "none";
-      modeTag.textContent = "Modo visualizador";
-      authStatusText.textContent = "Solo lectura.";
-      // chip casi invisible (sin texto)
-      authTxt.textContent = "";
-      authDot.style.background = "rgba(147,161,182,.25)";
-      authDot.style.borderColor = "rgba(147,161,182,.25)";
-      btnLogout.style.display = "none";
     }
     function setEditorUI(){
       $("btnEmitir").style.display = "";
@@ -1633,21 +1143,18 @@
       $("btnExport").style.display = "";
       $("btnImport").style.display = "";
       $("btnReset").style.display = "";
-      $("cardRecibos").style.display = "";
-      modeTag.textContent = "Modo editor habilitado";
-      authStatusText.textContent = "Edición habilitada.";
-      authTxt.textContent = "Acceso";
-      authDot.style.background = "rgba(34,197,94,.35)";
-      authDot.style.borderColor = "rgba(34,197,94,.35)";
-      btnLogout.style.display = "";
     }
 
     onAuthStateChanged(auth, (user)=>{
       if(user){
         canWrite = true;
+        authStatus.textContent = "Modo editor habilitado";
+        btnLogout.style.display = "";
         setEditorUI();
       } else {
         canWrite = false;
+        authStatus.textContent = "Modo visualizador (solo lectura)";
+        btnLogout.style.display = "none";
         setViewerUI();
       }
     });
@@ -1684,57 +1191,60 @@
     // ========== RENDER ==========
     function render(){
       if(!state || !state.meta || !Array.isArray(state.movs) || !Array.isArray(state.recibos)){
-        $("saldoBig").textContent = "U$S —";
-        $("saldoMeta").textContent = "Estado inválido (no se pudo cargar).";
+        $("saldoBadge").textContent = "Saldo: —";
+        $("planResumen").textContent = "Estado inválido (no se pudo cargar).";
         return;
       }
 
       const movs = calcSaldos(state);
       const saldo = movs.length ? movs[movs.length-1].saldo : 0;
-      $("saldoBig").textContent = "U$S " + fmt(saldo);
+      $("saldoBadge").textContent = "Saldo: U$S " + fmt(saldo);
 
       const plan = aplicarPagosAlPlan(generarPlanBase(state), state);
       const { fin, cuotasRestantes } = estimacionFin(plan);
       const saldoRestante = Math.max(0, Number(state.meta.saldo_inicial||0) - totalPagado(state));
-      $("saldoMeta").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
+      $("planResumen").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
 
-      // Plan
       const tbPlan = $("tbodyPlan");
       tbPlan.innerHTML = "";
       plan.forEach(p=>{
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td data-label="Período">${p.periodo}</td>
-          <td class="conceptCell" data-label="Concepto">${p.concepto}${p.tipo==="antecedente" ? `<div class="small">Antecedente</div>` : ""}</td>
-          <td class="num" data-label="Monto">${fmt(p.cuota)}</td>
-          <td data-label="Estado">${p.estado}</td>
-          <td class="num" data-label="Saldo proyectado">${fmt(p.saldo_proyectado)}</td>
+          <td>${p.periodo}</td>
+          <td>${p.concepto}${p.tipo==="antecedente" ? `<div class="small">Antecedente</div>` : ""}</td>
+          <td class="num">${fmt(p.cuota)}</td>
+          <td>${p.estado}</td>
+          <td class="num">${fmt(p.saldo_proyectado)}</td>
         `;
         tbPlan.appendChild(tr);
       });
 
-      // Recibos (solo editor)
       const tbRec = $("tbodyRec");
       tbRec.innerHTML = "";
       if(state.recibos.length === 0){
-        tbRec.innerHTML = `<tr><td colspan="5" class="small">Todavía no hay recibos emitidos.</td></tr>`;
+        tbRec.innerHTML = `<tr><td colspan="5" class="muted">Todavía no hay recibos emitidos.</td></tr>`;
       } else {
         state.recibos.slice().sort((a,b)=>a.numero.localeCompare(b.numero)).forEach(r=>{
           const est = (r.estado==="pendiente" ? "Pendiente" : "Imputado");
-          const ver = `<a href="#" class="lnkRec" data-id="${r.id}">Ver</a>`;
+
+          // ====== ACCIONES: Ver + (Eliminar solo si pendiente) ======
+          let acciones = `<a href="#" class="lnkRec" data-id="${r.id}">Ver</a>`;
+          if(r.estado === "pendiente"){
+            acciones += ` · <a href="#" class="lnkDelRec" data-id="${r.id}" style="color:#fca5a5">Eliminar</a>`;
+          }
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td data-label="Período">${r.periodo}</td>
-            <td class="conceptCell" data-label="Concepto">${r.concepto}<div class="small">${(MESES[r.periodo.split("/")[0]]||r.periodo.split("/")[0])} ${r.periodo.split("/")[1]}</div></td>
-            <td class="num" data-label="Monto">${fmt(r.monto)}</td>
-            <td data-label="Recibo">R${r.numero} · ${ver}</td>
-            <td data-label="Estado">${est}</td>
+            <td>${r.periodo}</td>
+            <td>${r.concepto}<div class="small">${(MESES[r.periodo.split("/")[0]]||r.periodo.split("/")[0])} ${r.periodo.split("/")[1]}</div></td>
+            <td class="num">${fmt(r.monto)}</td>
+            <td>R${r.numero} · ${acciones}</td>
+            <td>${est}</td>
           `;
           tbRec.appendChild(tr);
         });
       }
 
-      // Movimientos
       const tbMov = $("tbodyMov");
       tbMov.innerHTML = "";
       movs.forEach(m=>{
@@ -1747,16 +1257,12 @@
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td data-label="Período">${m.periodo}</td>
-          <td class="conceptCell" data-label="Concepto">
-            ${m.concepto}
-            ${m.recibo_num ? ` <span class="small">(R${m.recibo_num})</span>` : ""}
-            ${m.obs ? `<div class="small">Obs.: ${m.obs}</div>`:""}
-          </td>
-          <td class="num" data-label="Débito">${m.debito ? fmt(m.debito) : "—"}</td>
-          <td class="num" data-label="Crédito">${m.credito ? fmt(m.credito) : "—"}</td>
-          <td class="num" data-label="Saldo"><b>${fmt(m.saldo)}</b></td>
-          <td data-label="Adjunto">${adj}</td>
+          <td>${m.periodo}</td>
+          <td>${m.concepto}${m.recibo_num ? ` <span class="small">(${m.recibo_num})</span>` : ""}${m.obs ? `<div class="small">Obs.: ${m.obs}</div>`:""}</td>
+          <td class="num">${m.debito ? fmt(m.debito) : "—"}</td>
+          <td class="num">${m.credito ? fmt(m.credito) : "—"}</td>
+          <td class="num"><b>${fmt(m.saldo)}</b></td>
+          <td>${adj}</td>
         `;
         tbMov.appendChild(tr);
       });
@@ -1775,6 +1281,29 @@
             const mov = movs2.find(m=>m.recibo_num===rec.numero);
             openReciboPrint(state, rec, "imputado", mov ? mov.saldo : undefined);
           }
+        };
+      });
+
+      // ====== ELIMINAR RECIBO (solo pendiente) ======
+      document.querySelectorAll(".lnkDelRec").forEach(a=>{
+        a.onclick = (e)=>{
+          e.preventDefault();
+          const id = a.getAttribute("data-id");
+          const rec = state.recibos.find(r=>r.id===id);
+          if(!rec) return;
+
+          if(rec.estado !== "pendiente"){
+            alert("Este recibo ya fue imputado y no puede eliminarse.");
+            return;
+          }
+
+          if(!confirm(`¿Eliminar el recibo R${rec.numero} (${rec.periodo})?\nEsta acción no se puede deshacer.`)){
+            return;
+          }
+
+          state.recibos = state.recibos.filter(r=>r.id!==id);
+          saveState();
+          render();
         };
       });
 
@@ -1802,7 +1331,7 @@
 
     // ========== UI EVENTS ==========
     $("btnEmitir").onclick = ()=>{
-      $("e_periodo").value = periodoMesActual();  // auto mes actual
+      $("e_periodo").value = "01/2026";
       $("e_monto").value = "";
       $("e_concepto").value = "Pago mensual";
       show("modalEmitir");
@@ -1861,7 +1390,7 @@
         reader.onload = (e)=>{
           $("i_preview").innerHTML = `
             <img src="${e.target.result}"
-                 style="max-width:100%;border:1px solid rgba(70,90,130,.35);border-radius:14px" />
+                 style="max-width:100%;border:1px solid #2a3140;border-radius:10px" />
           `;
         };
         reader.readAsDataURL(f);
@@ -1904,6 +1433,7 @@
       hide("modalImputar");
       render();
 
+      // ===== Envío de mail por imputación =====
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
       const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
