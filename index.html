@@ -889,11 +889,27 @@
     const fileName = `recibo_R${rec.numero}_${String(rec.periodo).replace("/","-")}.html`;
 
     const copyHtml = `
-      <div class="copy">
-        <div class="h1">RECIBO N° ${rec.numero}</div>
-        <div class="sub">Cuenta Corriente – Bertinelli / Lin Racioppi</div>
+    <div class="copy">
+
+<!-- fila 1: recibo + nombre cuenta en la misma línea -->
+<div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px;">
+  <div class="h1" style="margin:0;">RECIBO N° ${rec.numero}</div>
+  <div class="h2" style="margin:0; text-align:right;">Cuenta Corriente – Bertinelli / Lin Racioppi</div>
+</div>
+
+<!-- fila 2: período + concepto en la misma fila -->
+<div style="display:flex; justify-content:space-between; gap:16px; margin:10px 0 6px 0;">
+  <div class="kv" style="margin:0;">
+    <span class="k">Período imputado:</span> <span class="b">${rec.periodo}</span>
+  </div>
+
+  <div class="kv" style="margin:0; text-align:right;">
+    <span class="k">Concepto:</span> <span class="b">${rec.concepto}</span>
+  </div>
+</div>
 
         <p class="txt">
+          <br>
           En la ciudad de Buenos Aires, en el mes de <span class="b">${mes} de ${yyyy}</span>,
           recibí de <span class="b">${state.meta.comprador}</span> la suma de
           <span class="upper">${montoLinea}</span>,
@@ -901,9 +917,6 @@
           <span class="b">Escritura Pública Nº ${state.meta.escritura_num}</span> (Registro Notarial Nº ${state.meta.registro}),
           referida al mes de <span class="b">${state.meta.ref_mes}</span>.
         </p>
-
-        <div class="kv"><span class="k">Concepto:</span> <span class="b">${rec.concepto}</span></div>
-        <div class="kv"><span class="k">Período imputado:</span> <span class="b">${rec.periodo}</span></div>
         ${saldoBlock}
 
         <div class="grow"></div>
