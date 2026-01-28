@@ -562,16 +562,24 @@
 <div class="modal" id="modalEmitir">
   <div class="card">
     <h2 style="margin:0 0 10px 0;color:var(--muted)">Emitir recibo</h2>
+
     <div class="grid">
       <div>
         <div class="small">Período (MM/AAAA)</div>
         <input id="e_periodo" placeholder="01/2026" />
       </div>
+
       <div>
         <div class="small">Monto (U$S)</div>
         <input id="e_monto" type="number" min="1" step="1" placeholder="500" />
       </div>
+
+      <div style="grid-column:1/-1">
+        <div class="small">Concepto</div>
+        <input id="e_concepto" type="text" placeholder="Pago mensual" />
+      </div>
     </div>
+
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
       <button class="btn" id="e_cancel">Cancelar</button>
       <button class="btn primary" id="e_save">Emitir</button>
