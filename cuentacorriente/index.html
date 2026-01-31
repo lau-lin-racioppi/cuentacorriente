@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cuenta Corriente</title>
+  <title>Cuenta Corriente – Bertinelli / Lin Racioppi</title>
 
-  <!-- IMPORTANTÍSIMO: rutas correctas dentro de /cuentacorriente/ -->
+  <!-- IMPORTANTE: si style.css está dentro de /cuentacorriente/ -->
   <link rel="stylesheet" href="./style.css" />
-  <link rel="canonical" href="https://linracioppi.com.ar/cuentacorriente/" />
+
+  <!-- Canonical opcional (está bien así) -->
+  <link rel="canonical" href="/cuentacorriente/" />
 </head>
 
 <body>
@@ -73,7 +75,7 @@
       </div>
     </div>
 
-    <!-- CABECERA -->
+    <!-- CABECERA / ANEXO / PLAN -->
     <details class="section" id="secCabecera">
       <summary>
         <div class="sumLeft">
@@ -101,7 +103,6 @@
       </div>
     </details>
 
-    <!-- ANEXO -->
     <details class="section" id="secAnexo" style="margin-top:12px">
       <summary>
         <div class="sumLeft">
@@ -131,7 +132,6 @@
       </div>
     </details>
 
-    <!-- PLAN -->
     <details class="section" id="secPlan" style="margin-top:12px">
       <summary>
         <div class="sumLeft">
@@ -243,11 +243,13 @@
       <h2 style="margin:0 0 6px 0;color:var(--muted)">Imputar pago (obligatorio adjuntar recibo firmado)</h2>
       <div class="muted">El archivo adjunto debe ser una imagen o PDF del recibo firmado por ambas partes.</div>
       <hr style="border:none;border-top:1px solid var(--line2);margin:12px 0">
+
       <div class="grid">
         <div>
           <div class="small">Recibo pendiente</div>
           <select id="i_recibo"></select>
         </div>
+
         <div>
           <div class="small">Adjuntar recibo firmado (foto/scan/PDF)</div>
           <input id="i_file" type="file" accept="image/*,application/pdf" />
@@ -255,6 +257,7 @@
           <div class="err" id="i_file_err" style="margin-top:6px"></div>
           <div id="i_preview" style="margin-top:10px"></div>
         </div>
+
         <div style="grid-column:1/-1">
           <div class="small">Observación (opcional)</div>
           <textarea id="i_obs" placeholder="Ej.: se adjunta foto del recibo firmado."></textarea>
@@ -273,7 +276,7 @@
     </div>
   </div>
 
-  <!-- CLAVE: app.js como MÓDULO -->
-<link rel="stylesheet" href="./style.css" />
+  <!-- IMPORTANTE: app.js como módulo, dentro de la misma carpeta -->
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
