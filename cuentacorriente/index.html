@@ -2,9 +2,279 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="refresh" content="0; url=/cuentacorriente/">
-  <title>Redirigiendo…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cuenta Corriente</title>
+
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="canonical" href="/cuentacorriente/">
 </head>
 <body>
+
+  <script type="module" src="../app.js"></script>
+
+</body>
+</html>
+
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>Cuenta Corriente – Bertinelli / Lin Racioppi</h1>
+      <div class="subhead">Control contable + recibos firmados + acuerdo y anexo imprimibles.</div>
+    </div>
+
+    <!-- login colapsable -->
+    <details class="authDetails" id="authDetails">
+      <summary>
+        <div class="authSummary">
+          <span class="dot" id="authDot"></span>
+          <span class="txt" id="authSummaryTxt">Acceso</span>
+        </div>
+        <svg class="authChevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </summary>
+      <div class="auth" id="authBar"></div>
+    </details>
+  </div>
+
+  <div class="heroRow">
+    <div class="saldoPill">
+      <div class="ttl">Saldo actual – cuenta corriente</div>
+      <div class="amt" id="saldoGrande">U$S —</div>
+      <div class="extra" id="saldoExtra">—</div>
+    </div>
+
+    <div class="ctaCol">
+      <div class="btnRow" id="btnBar">
+        <button class="btn agreement" id="btnPrintPlan" title="Abrir acuerdo + anexo">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 3h7l3 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M14 3v4h4" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 12h8M8 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Ver acuerdo + plan de pagos
+        </button>
+
+        <button class="btn primary" id="btnEmitir">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Emitir recibo
+        </button>
+
+        <button class="btn primary" id="btnImputar">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Imputar pago
+        </button>
+
+        <button class="btn" id="btnExport">Exportar JSON</button>
+        <button class="btn" id="btnImport">Importar JSON</button>
+        <button class="btn danger" id="btnReset">Reset TOTAL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CABECERA / ANEXO / PLAN como secciones -->
+  <details class="section" id="secCabecera">
+    <summary>
+      <div class="sumLeft">
+        <div class="ico">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:18px;height:18px">
+            <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sumText">
+          <div class="sumTitle">Cabecera</div>
+          <div class="sumDesc">Escritura, inmueble, partes</div>
+        </div>
+      </div>
+      <div class="sumRight">
+        Ver más
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="sectionBody">
+      <div><b>Escritura Nº 434</b> – Registro Notarial Nº <b>30</b> – Escribano: <b>Norberto Gustavo Soler</b></div>
+      <div>Operación: <b>Compraventa inmueble – 25 de Mayo 8, 6º C, Ciudadela</b></div>
+      <div>Vendedor: <b>José Orlando Bertinelli</b> · Comprador: <b>Lautaro Nahuel Lin Racioppi</b></div>
+    </div>
+  </details>
+
+  <details class="section" id="secAnexo" style="margin-top:12px">
+    <summary>
+      <div class="sumLeft">
+        <div class="ico" style="background: rgba(22,163,74,.16); border-color: rgba(22,163,74,.22)">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:18px;height:18px">
+            <path d="M12 2v20M17 7H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sumText">
+          <div class="sumTitle">Anexo económico</div>
+          <div class="sumDesc">Precios, crédito, saldo inicial</div>
+        </div>
+      </div>
+      <div class="sumRight">
+        Ver más
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="sectionBody">
+      <div>Precio solicitado: USD 44.000</div>
+      <div>Precio escriturado: USD 41.000</div>
+      <div>Crédito Banco Nación: USD 30.850</div>
+      <div>Entrega inicial: USD 5.000</div>
+      <div>Saldo inicial convenido en cuenta corriente: USD 8.150</div>
+    </div>
+  </details>
+
+  <details class="section" id="secPlan" style="margin-top:12px">
+    <summary>
+      <div class="sumLeft">
+        <div class="ico" style="background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.22)">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:18px;height:18px">
+            <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 7h8M8 11h8M8 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sumText">
+          <div class="sumTitle">Plan de pagos proyectado</div>
+          <div class="sumDesc">Detalle por período</div>
+        </div>
+      </div>
+      <div class="sumRight">
+        Ver más
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="sectionBody">
+      <div class="muted" id="planResumenInline" style="margin-bottom:10px">—</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:110px">Período</th>
+            <th>Concepto</th>
+            <th class="num" style="width:120px">Monto (U$S)</th>
+            <th style="width:200px">Estado</th>
+            <th class="num" style="width:150px">Saldo proyectado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyPlan"></tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- Recibos (se oculta en modo visualizador) -->
+  <div class="card" id="cardRecibos">
+    <h2 style="margin:0 0 8px 0;color:var(--muted)">Recibos emitidos</h2>
+    <div class="muted" id="recDeleteHint" style="margin-bottom:8px"></div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Período</th>
+          <th>Concepto</th>
+          <th class="num" style="width:120px">Monto (U$S)</th>
+          <th style="width:220px">Recibo</th>
+          <th style="width:140px">Estado</th>
+          <th style="width:120px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyRec"></tbody>
+    </table>
+  </div>
+
+  <div class="card" id="cardMovs">
+    <h2 style="margin:0 0 8px 0;color:var(--muted)">Libro de movimientos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Período</th>
+          <th>Concepto</th>
+          <th class="num" style="width:110px">Débito</th>
+          <th class="num" style="width:110px">Crédito</th>
+          <th class="num" style="width:110px">Saldo</th>
+          <th style="width:190px">Adjunto</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyMov"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal Emitir -->
+<div class="modal" id="modalEmitir">
+  <div class="card">
+    <h2 style="margin:0 0 10px 0;color:var(--muted)">Emitir recibo</h2>
+
+    <div class="grid">
+      <div>
+        <div class="small">Período (MM/AAAA)</div>
+        <input id="e_periodo" placeholder="01/2026" />
+      </div>
+
+      <div>
+        <div class="small">Monto (U$S)</div>
+        <input id="e_monto" type="number" min="1" step="1" placeholder="500" />
+      </div>
+
+      <div style="grid-column:1/-1">
+        <div class="small">Concepto</div>
+        <input id="e_concepto" type="text" placeholder="Pago mensual" />
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button class="btn" id="e_cancel">Cancelar</button>
+      <button class="btn primary" id="e_save">Emitir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Imputar -->
+<div class="modal" id="modalImputar">
+  <div class="card">
+    <h2 style="margin:0 0 6px 0;color:var(--muted)">Imputar pago (obligatorio adjuntar recibo firmado)</h2>
+    <div class="muted">El archivo adjunto debe ser una imagen o PDF del recibo firmado por ambas partes.</div>
+    <hr style="border:none;border-top:1px solid var(--line2);margin:12px 0">
+    <div class="grid">
+      <div>
+        <div class="small">Recibo pendiente</div>
+        <select id="i_recibo"></select>
+      </div>
+      <div>
+        <div class="small">Adjuntar recibo firmado (foto/scan/PDF)</div>
+        <input id="i_file" type="file" accept="image/*,application/pdf" />
+        <div class="small" id="i_file_info" style="margin-top:8px"></div>
+        <div class="err" id="i_file_err" style="margin-top:6px"></div>
+        <div id="i_preview" style="margin-top:10px"></div>
+      </div>
+      <div style="grid-column:1/-1">
+        <div class="small">Observación (opcional)</div>
+        <textarea id="i_obs" placeholder="Ej.: se adjunta foto del recibo firmado."></textarea>
+      </div>
+    </div>
+
+    <div class="ck" style="margin-top:12px">
+      <input type="checkbox" id="i_declaro" />
+      <div class="small">Declaro que el adjunto corresponde al recibo seleccionado y que se encuentra firmado por ambas partes.</div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button class="btn" id="i_cancel">Cancelar</button>
+      <button class="btn primary" id="i_confirm">Imputar</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="./app.js"></script>
 </body>
 </html>
