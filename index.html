@@ -1577,8 +1577,30 @@
   }
 
   // ========== STATE ==========
-  let state = await pullRemoteOrInit();
-  localStorage.setItem(KEY, JSON.stringify(state));
+let state = null;
+
+try{
+  state = await pullRemoteOrInit();
+}catch(e){
+  console.error("pullRemoteOrInit error:", e);
+}
+
+if(!state){
+  try{
+    const local = localStorage.getItem(KEY);
+    state = local ? JSON.parse(local) : null;
+  }catch(e){
+    console.error("localStorage parse error:", e);
+    state = null;
+  }
+}
+
+if(!state){
+  state = makeInitialState();
+}
+
+// guardo backup local del último estado cargado
+localStorage.setItem(KEY, JSON.stringify(state));
 
   function saveState(){
     localStorage.setItem(KEY, JSON.stringify(state));
