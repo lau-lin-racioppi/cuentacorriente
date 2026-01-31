@@ -15,6 +15,8 @@
   const db = getFirestore(app);
   const auth = getAuth(app);
 
+  const EDITOR_UID = "uQ3bumEGUFWBaPC28M5BxZVWaqn2";
+
   const CC_REF = doc(db, "cuentas", "bertinelli-lin");
 
   const CLIENT_ID_KEY = "cc_client_id";
@@ -978,10 +980,18 @@ if(!state){
 // guardo backup local del último estado cargado
 localStorage.setItem(KEY, JSON.stringify(state));
 
-  function saveState(){
-    localStorage.setItem(KEY, JSON.stringify(state));
-    pushRemote(state).catch(err => console.error("pushRemote error", err));
+async function saveState(){
+  localStorage.setItem(KEY, JSON.stringify(state));
+
+  try{
+    await pushRemote(state);
+    return true;
+  }catch(err){
+    console.error("pushRemote error", err);
+    alert("No se pudo guardar en Firebase. Si estás sin permisos de edición, al recargar vuelve todo como estaba.");
+    return false;
   }
+}
 
   function bindRealtime(){
     onSnapshot(CC_REF, (snap)=>{
@@ -1237,8 +1247,8 @@ localStorage.setItem(KEY, JSON.stringify(state));
       const rec = { id: crypto.randomUUID(), numero, periodo, monto, concepto, estado:"pendiente" };
       state.recibos.push(rec);
 
-      saveState();
-      hide("modalEmitir");
+      const ok = await saveState();
+      if(!ok) return;      hide("modalEmitir");
       render();
       openReciboPrint(state, rec, "pendiente");
     };
@@ -1310,11 +1320,12 @@ localStorage.setItem(KEY, JSON.stringify(state));
         obs: obs || null
       });
 
-      rec.estado = "imputado";
-      saveState();
-      hide("modalImputar");
-      render();
+rec.estado = "imputado";
+const ok = await saveState();
+if(!ok) return;
 
+hide("modalImputar");
+render();
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
       const cco = "alejandraracioppi@gmail.com";
@@ -1386,24 +1397,34 @@ localStorage.setItem(KEY, JSON.stringify(state));
   bindUI();
   bindRealtime();
 
-  onAuthStateChanged(auth, (user)=>{
-    const authStatus = $("authStatus");
-    const btnLogout = $("btnLogout");
+onAuthStateChanged(auth, (user)=>{
+  const authStatus = $("authStatus");
+  const btnLogout = $("btnLogout");
+
+  const isEditor = !!user && user.uid === EDITOR_UID;
+
+  if(isEditor){
+    canWrite = true;
+    authStatus.textContent = "Modo editor habilitado";
+    btnLogout.style.display = "";
+    setEditorUI();
+    syncAuthSummary(true);
+  } else {
+    canWrite = false;
+    setViewerUI();
+    syncAuthSummary(false);
 
     if(user){
-      canWrite = true;
-      authStatus.textContent = "Modo editor habilitado";
+      authStatus.textContent = "Logueado sin permisos de edición (solo lectura)";
       btnLogout.style.display = "";
-      setEditorUI();
-      syncAuthSummary(true);
     } else {
-      canWrite = false;
       authStatus.textContent = "Modo visualizador (solo lectura)";
       btnLogout.style.display = "none";
-      setViewerUI();
-      syncAuthSummary(false);
     }
-    render();
-  });
+  }
+
+  render();
+});
+
 
   render();
