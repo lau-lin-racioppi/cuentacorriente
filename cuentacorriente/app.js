@@ -1,0 +1,1 @@
+// Complete content of app.js with <script src="/app.js"></script> line removed
