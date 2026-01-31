@@ -1317,6 +1317,7 @@ localStorage.setItem(KEY, JSON.stringify(state));
 
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
+      const cco = "alejandraracioppi@gmail.com";
       const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
       const body = [
         "Se registró una imputación de pago.",
