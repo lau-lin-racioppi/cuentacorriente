@@ -19,15 +19,14 @@
 
   const CC_REF = doc(db, "cuentas", "bertinelli-lin");
 
-  const CLIENT_ID_KEY = "cc_client_id";
-  const clientId = localStorage.getItem(CLIENT_ID_KEY) || crypto.randomUUID();
-  localStorage.setItem(CLIENT_ID_KEY, clientId);
 
   let applyingRemote = false;
   let lastLocalRev = 0;
   let canWrite = false;
 
-  const KEY = "cc_bertinelli_lin_full_v4";
+let currentUid = null;
+const who = () => currentUid || "anon";
+
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 });
   const MESES = {"01":"Enero","02":"Febrero","03":"Marzo","04":"Abril","05":"Mayo","06":"Junio","07":"Julio","08":"Agosto","09":"Septiembre","10":"Octubre","11":"Noviembre","12":"Diciembre"};
@@ -43,18 +42,18 @@
     return `${mm}/${yyyy}`;
   }
 
-  async function pushRemote(state) {
-    if (!canWrite) return;
-    if (applyingRemote) return;
+async function pushRemote(state) {
+  if (!canWrite) throw new Error("NO_WRITE");
+  if (applyingRemote) return;
 
-    state._meta = state._meta || {};
-    state._meta.rev = (state._meta.rev || 0) + 1;
-    state._meta.updatedAt = Date.now();
-    state._meta.updatedBy = clientId;
-    lastLocalRev = state._meta.rev;
+  state._meta = state._meta || {};
+  state._meta.rev = (state._meta.rev || 0) + 1;
+  state._meta.updatedAt = Date.now();
+  state._meta.updatedBy = who();
+  lastLocalRev = state._meta.rev;
 
-    await setDoc(CC_REF, { state }, { merge: true });
-  }
+  await setDoc(CC_REF, { state }, { merge: true });
+}
 
   function makeInitialState(){
     return {
@@ -80,33 +79,44 @@
     };
   }
 
-  async function pullRemoteOrInit() {
-    const snap = await getDoc(CC_REF);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data && data.state) return data.state;
-    }
-    const initial = makeInitialState();
-    initial._meta = { rev: 1, updatedAt: Date.now(), updatedBy: clientId };
-    await setDoc(CC_REF, { state: initial }, { merge: true });
-    return initial;
+async function pullRemoteOrInit() {
+  const snap = await getDoc(CC_REF);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    if (data && data.state) return data.state;
   }
 
-  async function hardReset(stateRef){
-    if(!confirm("Reset TOTAL: borra local y Firebase. ¿Seguro?")) return stateRef;
-
-    localStorage.removeItem(KEY);
-
-    const fresh = makeInitialState();
-    fresh._meta = { rev: 1, updatedAt: Date.now(), updatedBy: clientId };
-
-    applyingRemote = true;
-    await setDoc(CC_REF, { state: fresh }, { merge: true });
-    applyingRemote = false;
-
-    alert("Listo: reseteado local + Firebase.");
-    return fresh;
+  // Si no existe y NO sos editor: no intentes crear, porque no vas a poder.
+  if (!canWrite) {
+    throw new Error("DOC_NOT_FOUND_OR_EMPTY_AND_NO_PERMISSION");
   }
+
+  const initial = makeInitialState();
+  initial._meta = { rev: 1, updatedAt: Date.now(), updatedBy: who() };
+  await setDoc(CC_REF, { state: initial }, { merge: true });
+  return initial;
+}
+
+
+async function hardReset(stateRef){
+  if(!confirm("Reset TOTAL: borra Firebase. ¿Seguro?")) return stateRef;
+
+  if(!canWrite){
+    alert("No tenés permisos de edición para resetear.");
+    return stateRef;
+  }
+
+  const fresh = makeInitialState();
+  fresh._meta = { rev: 1, updatedAt: Date.now(), updatedBy: who() };
+
+  applyingRemote = true;
+  await setDoc(CC_REF, { state: fresh }, { merge: true });
+  applyingRemote = false;
+
+  alert("Listo: reseteado en Firebase.");
+  return fresh;
+}
 
   function calcSaldos(state){
     let saldo = 0;
@@ -952,66 +962,40 @@
     }
   }
 
-  // ========== STATE ==========
-let state = null;
 
-try{
-  state = await pullRemoteOrInit();
-}catch(e){
-  console.error("pullRemoteOrInit error:", e);
-}
-
-if(!state){
-  try{
-    const local = localStorage.getItem(KEY);
-    state = local ? JSON.parse(local) : null;
-  }catch(e){
-    console.error("localStorage parse error:", e);
-    state = null;
-  }
-}
-
-if(!state){
-  state = makeInitialState();
-}
-
-// guardo backup local del último estado cargado
-localStorage.setItem(KEY, JSON.stringify(state));
 
 async function saveState(){
-  localStorage.setItem(KEY, JSON.stringify(state));
-
   try{
     await pushRemote(state);
     return true;
   }catch(err){
-    console.error("pushRemote error", err);
-    alert("No se pudo guardar en Firebase. Si estás sin permisos de edición, al recargar vuelve todo como estaba.");
+    console.error("saveState error", err);
+    alert("No se pudo guardar en Firebase (probablemente no sos editor).");
     return false;
   }
 }
 
-  function bindRealtime(){
-    onSnapshot(CC_REF, (snap)=>{
-      if (!snap.exists()) return;
-      const data = snap.data();
-      if (!data?.state) return;
+function bindRealtime(){
+  onSnapshot(CC_REF, (snap)=>{
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (!data?.state) return;
 
-      const remoteState = data.state;
-      const rrev = remoteState?._meta?.rev || 0;
+    const remoteState = data.state;
+    const rrev = remoteState?._meta?.rev || 0;
 
-      if (rrev === lastLocalRev && remoteState?._meta?.updatedBy === clientId) return;
+    // Evita re-aplicar lo que vos mismo acabás de subir
+    if (rrev === lastLocalRev && remoteState?._meta?.updatedBy === who()) return;
 
-      const cur = state?._meta?.rev || 0;
-      if (rrev <= cur) return;
+    const cur = state?._meta?.rev || 0;
+    if (rrev <= cur) return;
 
-      applyingRemote = true;
-      state = remoteState;
-      localStorage.setItem(KEY, JSON.stringify(state));
-      render();
-      applyingRemote = false;
-    });
-  }
+    applyingRemote = true;
+    state = remoteState;
+     
+    applyingRemote = false;
+  });
+}
 
   // ========== RECIBOS: ELIMINAR / ANULAR ==========
   function eliminarReciboPendiente(recId){
@@ -1029,7 +1013,7 @@ async function saveState(){
 
     state.recibos = state.recibos.filter(r=>r.id!==recId);
     saveState();
-    render();
+     
   }
 
   function anularReciboImputado(recId){
@@ -1062,7 +1046,7 @@ async function saveState(){
     rec.estado = "anulado";
 
     saveState();
-    render();
+     
   }
 
   // ========== RENDER ==========
@@ -1245,9 +1229,13 @@ async function saveState(){
       const rec = { id: crypto.randomUUID(), numero, periodo, monto, concepto, estado:"pendiente" };
       state.recibos.push(rec);
 
-      const ok = await saveState();
-      if(!ok) return;      hide("modalEmitir");
-      render();
+      $("e_save").onclick = async ()=>{
+const ok = await saveState();
+if(!ok) return;
+hide("modalEmitir");
+render();
+openReciboPrint(state, rec, "pendiente");
+       
       openReciboPrint(state, rec, "pendiente");
     };
 
@@ -1323,7 +1311,7 @@ const ok = await saveState();
 if(!ok) return;
 
 hide("modalImputar");
-render();
+ 
       const to = "l.linracioppi@gmail.com";
       const cc = "l.linracioppi@gmail.com";
       const cco = "alejandraracioppi@gmail.com";
@@ -1371,7 +1359,7 @@ render();
             if(!obj || !obj.meta || !Array.isArray(obj.recibos) || !Array.isArray(obj.movs)) return alert("JSON inválido.");
             state = obj;
             saveState();
-            render();
+             
           }catch(e){
             alert("No pude leer el JSON.");
           }
@@ -1384,18 +1372,66 @@ render();
     $("btnReset").onclick = async ()=>{
       state = await hardReset(state);
       saveState();
-      render();
+       
     };
   }
 
-  // ========== INIT ==========
-  function setViewerUIStub(){}
+// ========== INIT ==========
+let state = null;
 
-  mountAuthUI();
-  bindUI();
-  bindRealtime();
+mountAuthUI();
+bindUI();
 
-onAuthStateChanged(auth, (user)=>{
+let realtimeBound = false;
+
+onAuthStateChanged(auth, async (user)=>{
+  const authStatus = $("authStatus");
+  const btnLogout = $("btnLogout");
+
+  currentUid = user ? user.uid : null;
+
+  const isEditor = !!user && user.uid === EDITOR_UID;
+
+  if(isEditor){
+    canWrite = true;
+    authStatus.textContent = "Modo editor habilitado";
+    btnLogout.style.display = "";
+    setEditorUI();
+    syncAuthSummary(true);
+  } else {
+    canWrite = false;
+    setViewerUI();
+    syncAuthSummary(false);
+
+    if(user){
+      authStatus.textContent = "Logueado sin permisos de edición (solo lectura)";
+      btnLogout.style.display = "";
+    } else {
+      authStatus.textContent = "Modo visualizador (solo lectura)";
+      btnLogout.style.display = "none";
+    }
+  }
+
+  try{
+    state = await pullRemoteOrInit();
+  }catch(e){
+    console.error("pullRemoteOrInit failed:", e);
+
+    // Si no hay doc y no sos editor, no invento datos como si fuese real.
+    state = makeInitialState();
+    $("saldoGrande").textContent = "U$S —";
+    $("saldoExtra").textContent = "No se pudo cargar Firebase (doc inexistente o permisos insuficientes).";
+  }
+
+  if(!realtimeBound){
+    bindRealtime();
+    realtimeBound = true;
+  }
+
+  render();
+});
+
+
   const authStatus = $("authStatus");
   const btnLogout = $("btnLogout");
 
@@ -1421,8 +1457,8 @@ onAuthStateChanged(auth, (user)=>{
     }
   }
 
-  render();
+   
 });
 
 
-  render();
+   
