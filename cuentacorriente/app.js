@@ -1467,7 +1467,8 @@ onAuthStateChanged(auth, async (user) => {
   const btnLogout = $("btnLogout");
 
   currentUid = user ? user.uid : null;
-
+console.log("AUTH uid:", user?.uid, "email:", user?.email);
+   
   const isEditor = !!user && user.uid === EDITOR_UID;
 
   if (isEditor) {
