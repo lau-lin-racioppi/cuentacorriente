@@ -61,6 +61,11 @@ async function pushRemote(state) {
   if (!canWrite) throw new Error("NO_WRITE");
   if (applyingRemote) return;
 
+  // 🔑 fuerza refresh del token de auth ANTES de escribir
+  if (auth.currentUser) {
+    await auth.currentUser.getIdToken(true);
+  }
+
   state._meta = state._meta || {};
   state._meta.rev = (state._meta.rev || 0) + 1;
   state._meta.updatedAt = Date.now();
@@ -1011,8 +1016,12 @@ async function saveState() {
     await pushRemote(state);
     return true;
   } catch (err) {
-    console.error("saveState error", err);
-    alert("No se pudo guardar en Firebase (probablemente no sos editor).");
+    console.error("saveState error FULL:", err);
+    alert(
+      "No se pudo guardar en Firebase.\n\n" +
+      "code: " + (err?.code || "—") + "\n" +
+      "message: " + (err?.message || err)
+    );
     return false;
   }
 }
@@ -1463,6 +1472,7 @@ bindUI();
 let realtimeBound = false;
 
 onAuthStateChanged(auth, async (user) => {
+   console.log("AUTH:", { uid: user?.uid, email: user?.email });
   const authStatus = $("authStatus");
   const btnLogout = $("btnLogout");
 
