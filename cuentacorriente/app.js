@@ -1186,20 +1186,27 @@ function render() {
   if ($("btnImputar")) $("btnImputar").disabled = pendientes.length === 0;
 
   const sel = $("i_recibo");
-  if (sel) {
-    sel.innerHTML = "";
-    pendientes
-      .slice()
-      .sort((a, b) => a.numero.localeCompare(b.numero))
-      .forEach(r => {
-        const opt = document.createElement("option");
-        opt.value = r.id;
-        opt.textContent = `R${r.numero} · ${r.periodo} · U$S ${fmt(r.monto)} · ${r.concepto}`;
-        sel.appendChild(opt);
-      });
+if (sel) {
+  sel.innerHTML = "";
+
+  pendientes
+    .slice()
+    .sort((a, b) => a.numero.localeCompare(b.numero))
+    .forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r.id;
+      opt.textContent = `R${r.numero} · ${r.periodo} · U$S ${fmt(r.monto)} · ${r.concepto}`;
+      sel.appendChild(opt);
+    });
+
+  // ✅ si hay pendientes, forzá selección válida
+  if (pendientes.length > 0) {
+    if (!sel.value) sel.value = pendientes[0].id;
+    // si el value actual ya no existe, también lo corregimos
+    const ok = pendientes.some(r => r.id === sel.value);
+    if (!ok) sel.value = pendientes[0].id;
   }
 }
-
 /* =========================
    UI EVENTS
 ========================= */
@@ -1249,6 +1256,12 @@ function bindUI() {
       $("i_preview").innerHTML = "";
       $("i_obs").value = "";
       $("i_declaro").checked = false;
+      // ✅ asegurar que haya un recibo pendiente seleccionado
+const pend = state?.recibos?.filter(r => r.estado === "pendiente") || [];
+const sel = $("i_recibo");
+if (sel && pend.length > 0) {
+  sel.value = pend[0].id; // selecciona el primero sí o sí
+}
       show("modalImputar");
     };
   }
