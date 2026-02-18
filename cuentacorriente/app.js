@@ -4,7 +4,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
 
 /* =========================
    FIREBASE INIT
@@ -13,7 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAuIf3Hv2ymT4AP3tdg2IOIEnTaYUez7eU",
   authDomain: "cuenta-c-bertinelli-lin.firebaseapp.com",
   projectId: "cuenta-c-bertinelli-lin",
-  storageBucket: "cuenta-c-bertinelli-lin.firebasestorage.app",
+  storageBucket: "cuenta-c-bertinelli-lin.appspot.com",
   messagingSenderId: "456522423280",
   appId: "1:456522423280:web:e26a3ad2c45d27117f9b35"
 };
@@ -21,7 +20,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
 
 const EDITOR_UID = "uQ3bumEGUFWBaPC28M5BxZVWaqn2";
 const CC_REF = doc(db, "cuentas", "bertinelli-lin");
@@ -235,23 +233,6 @@ function fileToDataUrl(file) {
   });
 }
 
-async function uploadAdjuntoToStorage(file, rec){
-  if(!canWrite) throw new Error("NO_WRITE");
-
-  const safeName = String(file.name || "archivo")
-    .replace(/[^\w.\-() ]+/g, "_")
-    .slice(0, 120);
-
-  const path = `cuentas/bertinelli-lin/recibos/R${rec.numero}_${rec.periodo.replace("/","-")}_${Date.now()}_${safeName}`;
-  const storageRef = sRef(storage, path);
-
-  const metadata = {
-    contentType: file.type || "application/octet-stream",
-    customMetadata: {
-      reciboNumero: String(rec.numero),
-      periodo: String(rec.periodo)
-    }
-  };
 
   await uploadBytes(storageRef, file, metadata);
   const url = await getDownloadURL(storageRef);
@@ -1322,8 +1303,8 @@ function bindUI() {
 
 const obs = String($("i_obs").value || "").trim();
 
-// ✅ Subo el adjunto a Storage y guardo SOLO el link en Firestore
-const adjunto = await uploadAdjuntoToStorage(file, rec);
+// ✅ Guardar adjunto dentro de Firestore como DataURL (SIN Storage)
+const dataUrl = await fileToDataUrl(file);
 
 state.movs.push({
   id: crypto.randomUUID(),
@@ -1332,7 +1313,7 @@ state.movs.push({
   debito: 0,
   credito: rec.monto,
   recibo_num: rec.numero,
-  adjunto, // {name,type,url,path,size}
+  adjunto: { name: file.name, type: file.type, dataUrl },
   obs: obs || null
 });
 
