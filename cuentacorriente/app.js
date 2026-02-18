@@ -4,6 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
 
 /* =========================
    FIREBASE INIT
@@ -20,6 +21,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 const EDITOR_UID = "uQ3bumEGUFWBaPC28M5BxZVWaqn2";
 const CC_REF = doc(db, "cuentas", "bertinelli-lin");
@@ -231,6 +233,36 @@ function fileToDataUrl(file) {
     r.onerror = reject;
     r.readAsDataURL(file);
   });
+}
+
+async function uploadAdjuntoToStorage(file, rec){
+  if(!canWrite) throw new Error("NO_WRITE");
+
+  const safeName = String(file.name || "archivo")
+    .replace(/[^\w.\-() ]+/g, "_")
+    .slice(0, 120);
+
+  const path = `cuentas/bertinelli-lin/recibos/R${rec.numero}_${rec.periodo.replace("/","-")}_${Date.now()}_${safeName}`;
+  const storageRef = sRef(storage, path);
+
+  const metadata = {
+    contentType: file.type || "application/octet-stream",
+    customMetadata: {
+      reciboNumero: String(rec.numero),
+      periodo: String(rec.periodo)
+    }
+  };
+
+  await uploadBytes(storageRef, file, metadata);
+  const url = await getDownloadURL(storageRef);
+
+  return {
+    name: safeName,
+    type: file.type || "application/octet-stream",
+    url,
+    path,
+    size: Number(file.size || 0)
+  };
 }
 
 function abrirMailImputacion({ to, cc, subject, body }) {
@@ -566,16 +598,23 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
 /* =========================
    ADJUNTO VIEWER
 ========================= */
-function abrirAdjunto(adjunto) {
+function abrirAdjunto(adjunto){
   const w = window.open("", "_blank");
-  if (!adjunto?.dataUrl) {
+  if(!adjunto){
     w.document.write("<p style='font-family:system-ui'>No hay adjunto.</p>");
     w.document.close();
     return;
   }
 
-  const safeName = (adjunto.name || "adjunto").replaceAll("<", "").replaceAll(">", "");
-  const isPdf = (adjunto.type || "").includes("pdf");
+  const safeName = (adjunto.name || "adjunto").replaceAll("<","").replaceAll(">","");
+  const src = adjunto.url || adjunto.dataUrl || "";
+  if(!src){
+    w.document.write("<p style='font-family:system-ui'>No hay adjunto.</p>");
+    w.document.close();
+    return;
+  }
+
+  const isPdf = (adjunto.type || "").includes("pdf") || String(src).includes(".pdf");
   const title = `Adjunto – ${safeName}`;
 
   const html = `
@@ -589,121 +628,36 @@ function abrirAdjunto(adjunto) {
   :root{ --barH:56px; }
   html,body{ height:100%; }
   body{ margin:0; font-family:system-ui,Segoe UI,Arial; background:#fff; color:#111; }
-
   .topbar{
-    position: sticky;
-    top:0;
-    z-index:10;
-    height: var(--barH);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    padding: 10px 12px;
-    background:#fff;
-    border-bottom: 1px solid #e5e7eb;
+    position: sticky; top:0; z-index:10; height: var(--barH);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding: 10px 12px; background:#fff; border-bottom: 1px solid #e5e7eb;
   }
-  .ttl{
-    font-size:14px;
-    font-weight:900;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .btn{
-    border:1px solid #111;
-    background:#f2f2f2;
-    padding:8px 12px;
-    border-radius:10px;
-    font-weight:800;
-    cursor:pointer;
-  }
-
-  .viewer{
-    height: calc(100dvh - var(--barH));
-    width: 100vw;
-    overflow:auto;
-    background:#fff;
-  }
-
+  .ttl{ font-size:14px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
+  .viewer{ height: calc(100dvh - var(--barH)); width: 100vw; overflow:auto; background:#fff; }
   .imgWrap{ display:flex; justify-content:center; padding: 12px; }
   img{ max-width: 100%; height: auto; border:1px solid #ddd; border-radius:10px; }
-  embed{ width:100%; height:100%; border:none; }
-
-  @media print{
-    .topbar{ display:none; }
-    .viewer{ height:auto; }
-  }
+  iframe, embed{ width:100%; height:100%; border:none; }
+  @media print{ .topbar{ display:none; } .viewer{ height:auto; } }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="ttl">${title}</div>
-  <button class="btn" id="btnCta">...</button>
+  <button class="btn" id="btnCta">Imprimir</button>
 </div>
 
 <div class="viewer">
   ${isPdf
-    ? `<embed src="${adjunto.dataUrl}" type="application/pdf" />`
-    : `<div class="imgWrap"><img src="${adjunto.dataUrl}" alt="Adjunto"/></div>`
+    ? `<embed src="${src}" type="application/pdf" />`
+    : `<div class="imgWrap"><img src="${src}" alt="Adjunto"/></div>`
   }
 </div>
 
 <script>
-  function dataUrlToBlob(dataUrl){
-    const parts = dataUrl.split(",");
-    const meta = parts[0];
-    const b64 = parts[1];
-    const m = /data:(.*?);base64/.exec(meta);
-    const type = m ? m[1] : "application/octet-stream";
-    const bin = atob(b64);
-    const len = bin.length;
-    const arr = new Uint8Array(len);
-    for(let i=0;i<len;i++) arr[i] = bin.charCodeAt(i);
-    return new Blob([arr], {type});
-  }
-
-  async function shareAdj(){
-    const blob = dataUrlToBlob(${JSON.stringify(adjunto.dataUrl)});
-    const file = new File([blob], ${JSON.stringify(safeName)}, { type: ${JSON.stringify(adjunto.type || "application/octet-stream")} });
-
-    if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ title:${JSON.stringify(title)}, text:${JSON.stringify(title)}, files:[file] });
-      return true;
-    }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    alert("Tu navegador no soporta compartir. Se descargó el archivo para que lo envíes.");
-    return false;
-  }
-
-  function isShareMode(){
-    const canShare = !!(navigator.share && navigator.canShare);
-    const isTouch = (navigator.maxTouchPoints || 0) > 0;
-    const isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
-    return canShare && (isTouch || isSmall);
-  }
-
-  const btn = document.getElementById("btnCta");
-  function syncCTA(){
-    if(isShareMode()){
-      btn.textContent = "Compartir";
-      btn.onclick = ()=> shareAdj().catch(err=>{ console.error(err); alert("No se pudo compartir."); });
-    } else {
-      btn.textContent = "Imprimir";
-      btn.onclick = ()=> window.print();
-    }
-  }
-  syncCTA();
-  window.addEventListener("resize", syncCTA);
+  document.getElementById("btnCta").onclick = ()=> window.print();
 <\/script>
 
 </body>
@@ -713,7 +667,6 @@ function abrirAdjunto(adjunto) {
   w.document.write(html);
   w.document.close();
 }
-
 /* =========================
    ACUERDO + ANEXO
 ========================= */
@@ -1367,19 +1320,21 @@ function bindUI() {
         return alert("Debés declarar que el adjunto corresponde al recibo y está firmado por ambas partes.");
       }
 
-      const obs = String($("i_obs").value || "").trim();
-      const dataUrl = await fileToDataUrl(file);
+const obs = String($("i_obs").value || "").trim();
 
-      state.movs.push({
-        id: crypto.randomUUID(),
-        periodo: rec.periodo,
-        concepto: rec.concepto,
-        debito: 0,
-        credito: rec.monto,
-        recibo_num: rec.numero,
-        adjunto: { name: file.name, type: file.type, dataUrl },
-        obs: obs || null
-      });
+// ✅ Subo el adjunto a Storage y guardo SOLO el link en Firestore
+const adjunto = await uploadAdjuntoToStorage(file, rec);
+
+state.movs.push({
+  id: crypto.randomUUID(),
+  periodo: rec.periodo,
+  concepto: rec.concepto,
+  debito: 0,
+  credito: rec.monto,
+  recibo_num: rec.numero,
+  adjunto, // {name,type,url,path,size}
+  obs: obs || null
+});
 
       rec.estado = "imputado";
       const ok = await saveState();
