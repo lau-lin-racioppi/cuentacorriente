@@ -1,19 +1,12 @@
 // app.js (único archivo JS) — SOLO FIREBASE (sin localStorage, sin Storage)
-// Importante: este archivo debe cargarse como <script type="module" src="./app.js"></script>
+// Importante: cargar como <script type="module" src="./app.js"></script>
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot
+  getFirestore, doc, getDoc, setDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 /* =========================
@@ -40,10 +33,11 @@ const CC_REF = doc(db, "cuentas", "bertinelli-lin");
 let applyingRemote = false;
 let lastLocalRev = 0;
 let canWrite = false;
-
 let currentUid = null;
-const who = () => currentUid || "anon";
+let state = null;
+let realtimeBound = false;
 
+const who = () => currentUid || "anon";
 const $ = (id) => document.getElementById(id);
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 });
@@ -65,24 +59,28 @@ function periodoActual() {
 }
 
 /* =========================
-   FIREBASE STATE I/O
+   FIRESTORE STATE I/O
 ========================= */
-async function pushRemote(state) {
+function sanitizeForFirestore(obj) {
+  // Elimina undefined, funciones, referencias raras.
+  return JSON.parse(JSON.stringify(obj));
+}
+
+async function pushRemote(nextState) {
   if (!canWrite) throw new Error("NO_WRITE");
   if (applyingRemote) return;
 
-  // fuerza refresh del token de auth ANTES de escribir
-  if (auth.currentUser) {
-    await auth.currentUser.getIdToken(true);
-  }
+  // fuerza refresh del token
+  if (auth.currentUser) await auth.currentUser.getIdToken(true);
 
-  state._meta = state._meta || {};
-  state._meta.rev = (state._meta.rev || 0) + 1;
-  state._meta.updatedAt = Date.now();
-  state._meta.updatedBy = who();
-  lastLocalRev = state._meta.rev;
+  nextState._meta = nextState._meta || {};
+  nextState._meta.rev = (nextState._meta.rev || 0) + 1;
+  nextState._meta.updatedAt = Date.now();
+  nextState._meta.updatedBy = who();
+  lastLocalRev = nextState._meta.rev;
 
-  await setDoc(CC_REF, { state }, { merge: true });
+  const clean = sanitizeForFirestore(nextState);
+  await setDoc(CC_REF, { state: clean }, { merge: true });
 }
 
 function makeInitialState() {
@@ -114,7 +112,8 @@ function makeInitialState() {
         adjunto: null,
         obs: null
       }
-    ]
+    ],
+    _meta: { rev: 0, updatedAt: Date.now(), updatedBy: "init" }
   };
 }
 
@@ -126,14 +125,14 @@ async function pullRemoteOrInit() {
     if (data && data.state) return data.state;
   }
 
-  if (!canWrite) {
-    throw new Error("DOC_NOT_FOUND_OR_EMPTY_AND_NO_PERMISSION");
-  }
+  if (!canWrite) throw new Error("DOC_NOT_FOUND_OR_EMPTY_AND_NO_PERMISSION");
 
   const initial = makeInitialState();
-  initial._meta = { rev: 1, updatedAt: Date.now(), updatedBy: who() };
+  initial._meta.rev = 1;
+  initial._meta.updatedAt = Date.now();
+  initial._meta.updatedBy = who();
 
-  await setDoc(CC_REF, { state: initial }, { merge: true });
+  await setDoc(CC_REF, { state: sanitizeForFirestore(initial) }, { merge: true });
   return initial;
 }
 
@@ -146,10 +145,12 @@ async function hardReset(stateRef) {
   }
 
   const fresh = makeInitialState();
-  fresh._meta = { rev: 1, updatedAt: Date.now(), updatedBy: who() };
+  fresh._meta.rev = 1;
+  fresh._meta.updatedAt = Date.now();
+  fresh._meta.updatedBy = who();
 
   applyingRemote = true;
-  await setDoc(CC_REF, { state: fresh }, { merge: true });
+  await setDoc(CC_REF, { state: sanitizeForFirestore(fresh) }, { merge: true });
   applyingRemote = false;
 
   alert("Listo: reseteado en Firebase.");
@@ -159,20 +160,20 @@ async function hardReset(stateRef) {
 /* =========================
    CALCULOS
 ========================= */
-function calcSaldos(state) {
+function calcSaldos(st) {
   let saldo = 0;
-  return state.movs.map(m => {
+  return st.movs.map(m => {
     saldo = saldo + Number(m.debito || 0) - Number(m.credito || 0);
     return { ...m, saldo };
   });
 }
 
-function totalPagado(state) {
-  return state.movs.reduce((acc, m) => acc + Number(m.credito || 0), 0);
+function totalPagado(st) {
+  return st.movs.reduce((acc, m) => acc + Number(m.credito || 0), 0);
 }
 
+/* ===== Numero en letras (igual que tenías) ===== */
 function unidades(n) { return ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"][n] || ""; }
-
 function decenas(n) {
   const esp = {
     10: "DIEZ", 11: "ONCE", 12: "DOCE", 13: "TRECE", 14: "CATORCE", 15: "QUINCE",
@@ -186,20 +187,15 @@ function decenas(n) {
   if (d < 3) return esp[n] || "";
   return u === 0 ? tens[d] : `${tens[d]} Y ${unidades(u)}`;
 }
-
 function centenas(n) {
   const c = Math.floor(n / 100);
   const rest = n % 100;
-  const map = {
-    1: "CIENTO", 2: "DOSCIENTOS", 3: "TRESCIENTOS", 4: "CUATROCIENTOS", 5: "QUINIENTOS",
-    6: "SEISCIENTOS", 7: "SETECIENTOS", 8: "OCHOCIENTOS", 9: "NOVECIENTOS"
-  };
+  const map = { 1:"CIENTO",2:"DOSCIENTOS",3:"TRESCIENTOS",4:"CUATROCIENTOS",5:"QUINIENTOS",6:"SEISCIENTOS",7:"SETECIENTOS",8:"OCHOCIENTOS",9:"NOVECIENTOS" };
   if (n === 100) return "CIEN";
   let out = c > 0 ? map[c] : "";
   if (rest > 0) out = out ? (out + " " + numeroEnLetras(rest)) : numeroEnLetras(rest);
   return out || "CERO";
 }
-
 function miles(n) {
   if (n < 1000) return centenas(n);
   const m = Math.floor(n / 1000);
@@ -208,7 +204,6 @@ function miles(n) {
   if (rest > 0) out += " " + centenas(rest);
   return out;
 }
-
 function numeroEnLetras(n) {
   n = Math.floor(Number(n || 0));
   if (n < 0) return "MENOS " + numeroEnLetras(-n);
@@ -222,20 +217,22 @@ function numeroEnLetras(n) {
   if (rest > 0) out += " " + miles(rest);
   return out;
 }
-
 function montoEnFormatoReciboUSD(monto) {
   const m = Math.floor(Number(monto || 0));
   const letras = numeroEnLetras(m);
   return `DOLARES BILLETES ESTADOUNIDENSES ${letras} (U$D ${m})`;
 }
 
-function nextReciboNum2(state) {
-  state.recibo_seq = (state.recibo_seq || 0) + 1;
-  return String(state.recibo_seq).padStart(2, "0");
+function nextReciboNum2(st) {
+  st.recibo_seq = (st.recibo_seq || 0) + 1;
+  return String(st.recibo_seq).padStart(2, "0");
 }
 
-// Convierte un archivo (imagen o pdf) a DataURL para guardarlo en Firestore (sin Storage)
-function fileToDataUrl(file) {
+/* =========================
+   ADJUNTOS SIN STORAGE
+   (optimiza imagen para que entre en Firestore)
+========================= */
+function readAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result || ""));
@@ -244,6 +241,89 @@ function fileToDataUrl(file) {
   });
 }
 
+async function imageFileToOptimizedJpegDataUrl(file, { maxW = 1280, maxH = 1280, quality = 0.72 } = {}) {
+  const dataUrl = await readAsDataURL(file);
+  const img = new Image();
+  img.src = dataUrl;
+
+  await new Promise((res, rej) => {
+    img.onload = () => res(true);
+    img.onerror = rej;
+  });
+
+  let w = img.naturalWidth || img.width;
+  let h = img.naturalHeight || img.height;
+
+  const ratio = Math.min(maxW / w, maxH / h, 1);
+  w = Math.round(w * ratio);
+  h = Math.round(h * ratio);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, w, h);
+
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
+function roughBytesFromDataUrl(dataUrl) {
+  // aproximación: base64 sin header
+  const b64 = String(dataUrl || "").split(",")[1] || "";
+  return Math.floor((b64.length * 3) / 4);
+}
+
+async function buildAdjuntoForFirestore(file) {
+  // Firestore doc total máx ~1 MiB. Tu state ya ocupa algo. Necesitamos ser conservadores.
+  // Regla práctica: adjunto <= 450 KB (mejor 250-350KB).
+  const MAX_BYTES = 450 * 1024;
+
+  if (file.type.startsWith("image/")) {
+    // Intento optimizado
+    let dataUrl = await imageFileToOptimizedJpegDataUrl(file, { maxW: 1280, maxH: 1280, quality: 0.72 });
+
+    // si sigue grande, baja calidad
+    if (roughBytesFromDataUrl(dataUrl) > MAX_BYTES) {
+      dataUrl = await imageFileToOptimizedJpegDataUrl(file, { maxW: 1024, maxH: 1024, quality: 0.62 });
+    }
+    if (roughBytesFromDataUrl(dataUrl) > MAX_BYTES) {
+      dataUrl = await imageFileToOptimizedJpegDataUrl(file, { maxW: 900, maxH: 900, quality: 0.55 });
+    }
+
+    const bytes = roughBytesFromDataUrl(dataUrl);
+    if (bytes > MAX_BYTES) {
+      throw new Error("ADJUNTO_DEMASIADO_GRANDE");
+    }
+
+    return {
+      name: String(file.name || "adjunto.jpg"),
+      type: "image/jpeg",
+      dataUrl
+    };
+  }
+
+  if (file.type === "application/pdf") {
+    // PDF: no podemos recomprimir fácil acá. Solo permitimos PDF chico.
+    if ((file.size || 0) > MAX_BYTES) {
+      throw new Error("PDF_DEMASIADO_GRANDE");
+    }
+    const dataUrl = await readAsDataURL(file);
+    if (roughBytesFromDataUrl(dataUrl) > MAX_BYTES) {
+      throw new Error("PDF_DEMASIADO_GRANDE");
+    }
+    return {
+      name: String(file.name || "adjunto.pdf"),
+      type: "application/pdf",
+      dataUrl
+    };
+  }
+
+  throw new Error("TIPO_INVALIDO");
+}
+
+/* =========================
+   MAILTO
+========================= */
 function abrirMailImputacion({ to, cc, subject, body }) {
   const enc = encodeURIComponent;
   const normalized = String(body || "").replace(/\\n/g, "\r\n");
@@ -255,19 +335,19 @@ function abrirMailImputacion({ to, cc, subject, body }) {
 /* =========================
    PLAN DE PAGOS
 ========================= */
-function generarPlanBase(state) {
+function generarPlanBase(st) {
   const plan = [];
 
   plan.push({
     periodo: "12/2025",
-    concepto: state.meta.entrega_inicial_label || "Entrega inicial ya efectuada",
-    cuota: Number(state.meta.entrega_inicial || 0),
-    saldo_proyectado: Number(state.meta.saldo_inicial || 0),
+    concepto: st.meta.entrega_inicial_label || "Entrega inicial ya efectuada",
+    cuota: Number(st.meta.entrega_inicial || 0),
+    saldo_proyectado: Number(st.meta.saldo_inicial || 0),
     estado: "Pagado",
     tipo: "antecedente"
   });
 
-  let saldo = Number(state.meta.saldo_inicial || 0);
+  let saldo = Number(st.meta.saldo_inicial || 0);
   let mes = 1, anio = 2026;
 
   function push(monto, concepto = "Pago mensual") {
@@ -284,8 +364,8 @@ function generarPlanBase(state) {
   return plan;
 }
 
-function aplicarPagosAlPlan(plan, state) {
-  let pagado = totalPagado(state);
+function aplicarPagosAlPlan(plan, st) {
+  let pagado = totalPagado(st);
 
   for (const fila of plan) {
     if (fila.tipo === "antecedente") continue;
@@ -311,9 +391,9 @@ function estimacionFin(plan) {
 }
 
 /* =========================
-   RECIBO PRINT
+   RECIBO PRINT (igual que tenías)
 ========================= */
-function openReciboPrint(state, rec, modo, saldoLuego) {
+function openReciboPrint(st, rec, modo, saldoLuego) {
   const isImputado = (modo === "imputado");
   const [mm, yyyy] = String(rec.periodo).split("/");
   const mes = MESES[mm] || mm;
@@ -349,11 +429,11 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
     <p class="txt">
       <br>
       En la ciudad de Buenos Aires, en el mes de <span class="b">${mes} de ${yyyy}</span>,
-      recibí de <span class="b">${state.meta.comprador}</span> la suma de
+      recibí de <span class="b">${st.meta.comprador}</span> la suma de
       <span class="upper">${montoLinea}</span>,
       en concepto de pago a cuenta del saldo pendiente de la operación de compraventa instrumentada mediante
-      <span class="b">Escritura Pública Nº ${state.meta.escritura_num}</span> (Registro Notarial Nº ${state.meta.registro}),
-      referida al mes de <span class="b">${state.meta.ref_mes}</span>.
+      <span class="b">Escritura Pública Nº ${st.meta.escritura_num}</span> (Registro Notarial Nº ${st.meta.registro}),
+      referida al mes de <span class="b">${st.meta.ref_mes}</span>.
     </p>
 
     ${saldoBlock}
@@ -363,14 +443,14 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
     <div class="sigGrid">
       <div>
         <div class="line"></div>
-        <div class="lineLabel">${state.meta.comprador}</div>
-        <div class="lineLabel">DNI: ${state.meta.dni_comprador}</div>
+        <div class="lineLabel">${st.meta.comprador}</div>
+        <div class="lineLabel">DNI: ${st.meta.dni_comprador}</div>
       </div>
 
       <div>
         <div class="line"></div>
-        <div class="lineLabel">${state.meta.vendedor}</div>
-        <div class="lineLabel">DNI: ${state.meta.dni_vendedor}</div>
+        <div class="lineLabel">${st.meta.vendedor}</div>
+        <div class="lineLabel">DNI: ${st.meta.dni_vendedor}</div>
       </div>
     </div>
   </div>
@@ -387,124 +467,38 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
   @page{ size:A4 portrait; margin:0; }
   html,body{ height:100%; }
   body{ margin:0; font-family:system-ui,Segoe UI,Arial; color:#111; background:#fff; }
-
-  :root{
-    --barH:56px;
-    --PAD:12mm;
-    --GAP:10mm;
-  }
-
-  .topbar{
-    position: sticky;
-    top:0;
-    z-index:10;
-    height: var(--barH);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    padding: 10px 12px;
-    background:#fff;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  .topbar .ttl{
-    font-size:14px;
-    font-weight:900;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .btn{
-    border:1px solid #111;
-    background:#f2f2f2;
-    padding:8px 12px;
-    border-radius:10px;
-    font-weight:800;
-    cursor:pointer;
-  }
-
-  .page{
-    width: 210mm;
-    height: 297mm;
-    padding: var(--PAD);
-    box-sizing: border-box;
-    position: relative;
-    display:flex;
-    flex-direction:column;
-    gap: var(--GAP);
-  }
-
-  .cutGuide{
-    position:absolute;
-    left: var(--PAD);
-    right: var(--PAD);
-    top: calc(var(--PAD) + (297mm - (var(--PAD) * 2)) / 2);
-    border-top: 1px dashed #9ca3af;
-    pointer-events:none;
-  }
-
-  .copy{
-    height: calc(((297mm - (var(--PAD) * 2)) - var(--GAP)) / 2);
-    box-sizing:border-box;
-    border:1px solid #111;
-    border-radius:10px;
-    padding: 10mm;
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-    overflow:hidden;
-  }
-
-  p{
-    text-align: justify;
-    text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
-    overflow-wrap: break-word;
-  }
-
+  :root{ --barH:56px; --PAD:12mm; --GAP:10mm; }
+  .topbar{ position: sticky; top:0; z-index:10; height: var(--barH); display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 12px; background:#fff; border-bottom: 1px solid #e5e7eb; }
+  .topbar .ttl{ font-size:14px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
+  .page{ width: 210mm; height: 297mm; padding: var(--PAD); box-sizing: border-box; position: relative; display:flex; flex-direction:column; gap: var(--GAP); }
+  .cutGuide{ position:absolute; left: var(--PAD); right: var(--PAD); top: calc(var(--PAD) + (297mm - (var(--PAD) * 2)) / 2); border-top: 1px dashed #9ca3af; pointer-events:none; }
+  .copy{ height: calc(((297mm - (var(--PAD) * 2)) - var(--GAP)) / 2); box-sizing:border-box; border:1px solid #111; border-radius:10px; padding: 10mm; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+  p{ text-align: justify; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; }
   .h1{font-size:18px;font-weight:900;margin:0 0 4px 0}
   .h2{font-size:14px;font-weight:800;margin:0}
   .txt{font-size:14.5px;line-height:1.62;margin:0 0 10px 0}
   .b{font-weight:900}
   .upper{font-weight:900;text-transform:uppercase}
-
   .kv{margin:8px 0;font-size:14px}
   .k{color:#222}
-
   .grow{ flex:1; min-height:0; }
-
   .sigGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
   .lineLabel{font-size:12.5px;color:#333;margin-top:6px}
   .line{border-top:1px solid #111;margin-top:16px}
-
   @media screen{
     body{ background:#e5e7eb; }
-    .page{
-      margin: 12px auto;
-      box-shadow:0 10px 30px rgba(0,0,0,.15);
-      background:#fff;
-    }
+    .page{ margin: 12px auto; box-shadow:0 10px 30px rgba(0,0,0,.15); background:#fff; }
   }
-
   @media (max-width: 900px){
-    .page{
-      width: calc(100vw - 16px);
-      height: auto;
-      padding: 14px;
-      gap: 12px;
-    }
+    .page{ width: calc(100vw - 16px); height: auto; padding: 14px; gap: 12px; }
     .cutGuide{ display:none; }
     .copy{ height:auto; overflow:visible; }
   }
-
   @media print{
     .topbar{ display:none; }
     body{ background:#fff; }
-    .page{
-      margin:0;
-      box-shadow:none;
-    }
+    .page{ margin:0; box-shadow:none; }
   }
 </style>
 </head>
@@ -512,7 +506,7 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
 
 <div class="topbar">
   <div class="ttl">${docTitle}</div>
-  <button class="btn" id="btnCta">...</button>
+  <button class="btn" id="btnCta">Imprimir</button>
 </div>
 
 <div class="page">
@@ -522,47 +516,7 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
 </div>
 
 <script>
-  async function shareHtml(){
-    const html = document.documentElement.outerHTML;
-    const file = new File([html], ${JSON.stringify(fileName)}, { type:"text/html" });
-
-    if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ title:${JSON.stringify(docTitle)}, text:${JSON.stringify(docTitle)}, files:[file] });
-      return true;
-    }
-
-    const blob = new Blob([html], {type:"text/html"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    alert("Tu navegador no soporta compartir. Se descargó el HTML para que lo envíes.");
-    return false;
-  }
-
-  function isShareMode(){
-    const canShare = !!(navigator.share && navigator.canShare);
-    const isTouch = (navigator.maxTouchPoints || 0) > 0;
-    const isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
-    return canShare && (isTouch || isSmall);
-  }
-
-  const btn = document.getElementById("btnCta");
-  function syncCTA(){
-    if(isShareMode()){
-      btn.textContent = "Compartir";
-      btn.onclick = ()=> shareHtml().catch(err=>{ console.error(err); alert("No se pudo compartir."); });
-    } else {
-      btn.textContent = "Imprimir";
-      btn.onclick = ()=> window.print();
-    }
-  }
-  syncCTA();
-  window.addEventListener("resize", syncCTA);
+  document.getElementById("btnCta").onclick = ()=> window.print();
 <\/script>
 
 </body>
@@ -579,20 +533,14 @@ function openReciboPrint(state, rec, modo, saldoLuego) {
 ========================= */
 function abrirAdjunto(adjunto){
   const w = window.open("", "_blank");
-  if(!adjunto){
+  if(!adjunto || !(adjunto.dataUrl || adjunto.url)){
     w.document.write("<p style='font-family:system-ui'>No hay adjunto.</p>");
     w.document.close();
     return;
   }
 
   const safeName = (adjunto.name || "adjunto").replaceAll("<","").replaceAll(">","");
-  const src = adjunto.url || adjunto.dataUrl || "";
-  if(!src){
-    w.document.write("<p style='font-family:system-ui'>No hay adjunto.</p>");
-    w.document.close();
-    return;
-  }
-
+  const src = adjunto.url || adjunto.dataUrl;
   const isPdf = (adjunto.type || "").includes("pdf") || String(src).includes("application/pdf");
   const title = `Adjunto – ${safeName}`;
 
@@ -607,11 +555,7 @@ function abrirAdjunto(adjunto){
   :root{ --barH:56px; }
   html,body{ height:100%; }
   body{ margin:0; font-family:system-ui,Segoe UI,Arial; background:#fff; color:#111; }
-  .topbar{
-    position: sticky; top:0; z-index:10; height: var(--barH);
-    display:flex; align-items:center; justify-content:space-between;
-    gap:10px; padding: 10px 12px; background:#fff; border-bottom: 1px solid #e5e7eb;
-  }
+  .topbar{ position: sticky; top:0; z-index:10; height: var(--barH); display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 12px; background:#fff; border-bottom: 1px solid #e5e7eb; }
   .ttl{ font-size:14px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
   .viewer{ height: calc(100dvh - var(--barH)); width: 100vw; overflow:auto; background:#fff; }
@@ -622,251 +566,25 @@ function abrirAdjunto(adjunto){
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="ttl">${title}</div>
   <button class="btn" id="btnCta">Imprimir</button>
 </div>
-
 <div class="viewer">
   ${isPdf
     ? `<embed src="${src}" type="application/pdf" />`
     : `<div class="imgWrap"><img src="${src}" alt="Adjunto"/></div>`
   }
 </div>
-
 <script>
   document.getElementById("btnCta").onclick = ()=> window.print();
 <\/script>
-
 </body>
 </html>`;
 
   w.document.open();
   w.document.write(html);
   w.document.close();
-}
-
-/* =========================
-   ACUERDO + ANEXO
-========================= */
-function printPlanYAcuerdo(state) {
-  const plan = aplicarPagosAlPlan(generarPlanBase(state), state);
-
-  const filas = plan.map(p => `
-    <tr>
-      <td>${p.periodo}</td>
-      <td>${p.concepto}</td>
-      <td class="num">${fmt(p.cuota)}</td>
-      <td>${p.estado}</td>
-      <td class="num">${fmt(p.saldo_proyectado)}</td>
-    </tr>
-  `).join("");
-
-  const docTitle = "Acuerdo y Anexo – Cuenta Corriente";
-
-  const fechaObj = new Date(Date.now());
-  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-  const fecha = `${fechaObj.getDate()} de ${meses[fechaObj.getMonth()]} de ${fechaObj.getFullYear()}`;
-
-  const acuerdo = `
-    <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
-    <p class="fecha">Buenos Aires, ${fecha}</p>
-
-    <p>
-      Entre el Sr. <b>${state.meta.vendedor}</b>, DNI <b>${state.meta.dni_vendedor}</b>, en adelante <b>EL VENDEDOR</b>, y el Sr.
-      <b>${state.meta.comprador}</b>, DNI <b>${state.meta.dni_comprador}</b>, en adelante <b>EL COMPRADOR</b>, se celebra el presente acuerdo,
-      sujeto a las siguientes cláusulas:
-    </p>
-
-    <p><b>PRIMERA – Antecedentes.</b> Las partes manifiestan que celebraron la compraventa del inmueble sito en
-      <b>${state.meta.inmueble}</b>, instrumentada mediante <b>Escritura Pública Nº ${state.meta.escritura_num}</b>, pasada ante el
-      <b>Registro Notarial Nº ${state.meta.registro}</b>, referida al mes de <b>${state.meta.ref_mes}</b>.
-    </p>
-
-    <p><b>SEGUNDA – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó en concepto de entrega inicial la suma de
-      <b>U$S ${fmt(state.meta.entrega_inicial)}</b>, quedando el saldo convenido en cuenta corriente determinado en función de dicha entrega.
-    </p>
-
-    <p><b>TERCERA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por <b>U$S ${fmt(state.meta.saldo_inicial)}</b>.</p>
-
-    <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) enero 2026: U$S 150; b) desde el período siguiente: pagos mensuales de referencia de U$S 500 hasta cancelar el saldo.</p>
-
-    <p><b>QUINTA – Adelantos.</b> El COMPRADOR podrá efectuar pagos adelantados o superiores sin penalidad. Dichos adelantos se imputarán al saldo y acortarán la duración total del plan.</p>
-
-    <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar el saldo hasta cero.</p>
-
-    <p><b>SÉPTIMA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
-
-    <p><b>OCTAVA – Naturaleza.</b> El presente acuerdo es complementario de la escritura referida y regula exclusivamente la modalidad de cancelación del saldo pendiente.</p>
-
-    <p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor, en la ciudad de Buenos Aires, en la fecha indicada al inicio.</p>
-
-    <div class="signRow">
-      <div class="sign">
-        <div class="line"></div>
-        <div class="lbl">Firma EL VENDEDOR</div>
-      </div>
-      <div class="sign">
-        <div class="line"></div>
-        <div class="lbl">Firma EL COMPRADOR</div>
-      </div>
-    </div>
-  `;
-
-  const html = `
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"/>
-  <title>${docTitle}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    @page{ size:A4 portrait; margin:16mm; }
-    body{ margin:0; background:#e5e7eb; font-family: Arial, sans-serif; color:#111; }
-    .fecha{ text-align:right; margin:0 0 12px 0; }
-
-    .noprint{
-      padding:12px;
-      position: sticky;
-      top:0;
-      background:#fff;
-      z-index:10;
-      border-bottom:1px solid #ddd;
-      display:flex;
-      justify-content:flex-end;
-    }
-    .btn{border:1px solid #111;background:#f2f2f2;padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer}
-
-    .sheet{
-      width: min(210mm, 100vw);
-      background:#fff;
-      margin:0 auto;
-      padding: clamp(12px, 3vw, 16mm);
-      box-shadow:0 10px 30px rgba(0,0,0,.15);
-      box-sizing:border-box;
-    }
-
-    @media (max-width: 900px){
-      body{ background:#fff; }
-      .sheet{ width:100vw; margin:0; padding: 14px; box-shadow:none; }
-    }
-
-    p{
-      text-align: justify;
-      text-justify: inter-word;
-      hyphens: auto;
-      -webkit-hyphens: auto;
-      overflow-wrap: break-word;
-      line-height:1.78;
-      margin:0 0 12px 0;
-      font-size:15.8px;
-    }
-    h1{ font-size:22px; margin:0 0 10px 0; text-align:center; letter-spacing:.2px; }
-    h2{ font-size:17px; margin:0 0 10px 0; }
-    .small{ font-size:14.2px; color:#333; }
-
-    table{ width:100%; border-collapse: collapse; margin:12px 0; font-size:13.8px; }
-    th,td{ border:1px solid #000; padding:6px; vertical-align:top; }
-    th{ background:#eee; text-align:left; }
-    td.num{ text-align:right; white-space:nowrap; }
-
-    .pageBreak{ break-before: page; page-break-before: always; }
-
-    .signRow{ display:flex; gap:40px; margin-top:28px; }
-    .sign{ flex:1; }
-    .line{ border-top:1px solid #000; margin-top:24px; }
-    .lbl{ font-size:13.2px; padding-top:6px; }
-
-    @media print{
-      body{ background:#fff; }
-      .noprint{ display:none; }
-      .sheet{ width:auto; margin:0; padding:0; box-shadow:none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="noprint">
-    <button class="btn" id="btnCta">...</button>
-  </div>
-
-  <div class="sheet">
-    ${acuerdo}
-    <div class="pageBreak"></div>
-
-    <h2>ANEXO PLAN DE PAGOS</h2>
-    <p class="small">
-      Inmueble: <b>${state.meta.inmueble}</b><br/>
-      Escritura Pública Nº <b>${state.meta.escritura_num}</b> – Registro Notarial Nº <b>${state.meta.registro}</b>.
-    </p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Período</th>
-          <th>Concepto</th>
-          <th class="num">Cuota (U$S)</th>
-          <th>Estado</th>
-          <th class="num">Saldo proyectado</th>
-        </tr>
-      </thead>
-      <tbody>${filas}</tbody>
-    </table>
-  </div>
-
-  <script>
-    document.title = ${JSON.stringify(docTitle)};
-
-    async function shareHtml(){
-      const html = document.documentElement.outerHTML;
-      const file = new File([html], "acuerdo_y_anexo.html", { type:"text/html" });
-
-      if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-        await navigator.share({ title: document.title, text: document.title, files: [file] });
-        return true;
-      }
-
-      const blob = new Blob([html], {type:"text/html"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 1000);
-      alert("Tu navegador no soporta compartir. Se descargó el HTML para que lo envíes.");
-      return false;
-    }
-
-    function isShareMode(){
-      const canShare = !!(navigator.share && navigator.canShare);
-      const isTouch = (navigator.maxTouchPoints || 0) > 0;
-      const isSmall = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
-      return canShare && (isTouch || isSmall);
-    }
-
-    const btn = document.getElementById("btnCta");
-    function syncCTA(){
-      if(isShareMode()){
-        btn.textContent = "Compartir";
-        btn.onclick = ()=> shareHtml().catch(err=>{ console.error(err); alert("No se pudo compartir."); });
-      } else {
-        btn.textContent = "Imprimir";
-        btn.onclick = ()=> window.print();
-      }
-    }
-    syncCTA();
-    window.addEventListener("resize", syncCTA);
-  <\/script>
-</body>
-</html>`;
-
-  const w = window.open("", "acuerdo_anexo");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-  try { w.document.title = docTitle; } catch (e) {}
 }
 
 /* =========================
@@ -874,7 +592,7 @@ function printPlanYAcuerdo(state) {
 ========================= */
 function mountAuthUI() {
   const authBar = $("authBar");
-  if (!authBar) return;
+  if(!authBar) return;
 
   authBar.innerHTML = `
     <span class="status" id="authStatus">Modo visualizador (solo lectura)</span>
@@ -921,31 +639,9 @@ function setEditorUI() {
   $("cardRecibos")?.classList.remove("hide");
 }
 
-function syncAuthSummary(isEditor) {
-  const dot = $("authDot");
-  const txt = $("authSummaryTxt");
-  const details = $("authDetails");
-
-  if (!dot || !txt || !details) return;
-
-  if (isEditor) {
-    dot.style.background = "rgba(34,197,94,.55)";
-    dot.style.borderColor = "rgba(34,197,94,.55)";
-    txt.textContent = "Modo editor";
-    details.open = true;
-  } else {
-    dot.style.background = "rgba(147,161,182,.35)";
-    dot.style.borderColor = "rgba(147,161,182,.35)";
-    txt.textContent = "Acceso";
-    details.open = false;
-  }
-}
-
 /* =========================
    SAVE / REALTIME
 ========================= */
-let state = null;
-
 async function saveState() {
   try {
     await pushRemote(state);
@@ -1036,6 +732,27 @@ function anularReciboImputado(recId) {
 /* =========================
    RENDER
 ========================= */
+function fillImputarSelect() {
+  const sel = $("i_recibo");
+  if (!sel) return;
+
+  const pendientes = (state?.recibos || []).filter(r => r.estado === "pendiente")
+    .slice()
+    .sort((a, b) => a.numero.localeCompare(b.numero));
+
+  sel.innerHTML = "";
+
+  pendientes.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r.id;
+    opt.textContent = `R${r.numero} · ${r.periodo} · U$S ${fmt(r.monto)} · ${r.concepto}`;
+    sel.appendChild(opt);
+  });
+
+  // Selecciona el primero para evitar "Elegí un recibo pendiente válido"
+  if (pendientes.length > 0) sel.selectedIndex = 0;
+}
+
 function render() {
   if (!state || !state.meta || !Array.isArray(state.movs) || !Array.isArray(state.recibos)) {
     if ($("saldoGrande")) $("saldoGrande").textContent = "U$S —";
@@ -1055,62 +772,33 @@ function render() {
   if ($("saldoExtra")) $("saldoExtra").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
   if ($("planResumenInline")) $("planResumenInline").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
 
-  if (canWrite && $("recDeleteHint")) {
-    $("recDeleteHint").textContent =
-      "Tip: los recibos PENDIENTES se pueden eliminar. Los IMPUTADOS se pueden ANULAR (revierte el pago con un débito, sin borrar el historial).";
-  }
-
-  const tbPlan = $("tbodyPlan");
-  if (tbPlan) {
-    tbPlan.innerHTML = "";
-    plan.forEach(p => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td data-label="Período">${p.periodo}</td>
-        <td class="conceptCell" data-label="Concepto">${p.concepto}${p.tipo === "antecedente" ? `<div class="small">Antecedente</div>` : ""}</td>
-        <td class="num" data-label="Monto (U$S)">${fmt(p.cuota)}</td>
-        <td data-label="Estado">${p.estado}</td>
-        <td class="num" data-label="Saldo proyectado">${fmt(p.saldo_proyectado)}</td>
-      `;
-      tbPlan.appendChild(tr);
-    });
-  }
-
   const tbRec = $("tbodyRec");
   if (tbRec) {
     tbRec.innerHTML = "";
     if (state.recibos.length === 0) {
       tbRec.innerHTML = `<tr><td data-label="Info" colspan="6" class="muted">Todavía no hay recibos emitidos.</td></tr>`;
     } else {
-      state.recibos
-        .slice()
-        .sort((a, b) => a.numero.localeCompare(b.numero))
-        .forEach(r => {
-          const est = (r.estado === "pendiente" ? "Pendiente" : (r.estado === "imputado" ? "Imputado" : "Anulado"));
-          const ver = `<a href="#" class="lnkRec" data-id="${r.id}">Ver</a>`;
+      state.recibos.slice().sort((a, b) => a.numero.localeCompare(b.numero)).forEach(r => {
+        const est = (r.estado === "pendiente" ? "Pendiente" : (r.estado === "imputado" ? "Imputado" : "Anulado"));
+        const ver = `<a href="#" class="lnkRec" data-id="${r.id}">Ver</a>`;
 
-          let acciones = "—";
-          if (canWrite) {
-            if (r.estado === "pendiente") {
-              acciones = `<a href="#" class="lnkDelRec" data-id="${r.id}" style="color:#fca5a5">Eliminar</a>`;
-            } else if (r.estado === "imputado") {
-              acciones = `<a href="#" class="lnkAnuRec" data-id="${r.id}" style="color:#fde68a">Anular</a>`;
-            } else {
-              acciones = `<span class="small">—</span>`;
-            }
-          }
+        let acciones = "—";
+        if (canWrite) {
+          if (r.estado === "pendiente") acciones = `<a href="#" class="lnkDelRec" data-id="${r.id}" style="color:#fca5a5">Eliminar</a>`;
+          else if (r.estado === "imputado") acciones = `<a href="#" class="lnkAnuRec" data-id="${r.id}" style="color:#fde68a">Anular</a>`;
+        }
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td data-label="Período">${r.periodo}</td>
-            <td class="conceptCell" data-label="Concepto">${r.concepto}<div class="small">${(MESES[r.periodo.split("/")[0]] || r.periodo.split("/")[0])} ${r.periodo.split("/")[1]}</div></td>
-            <td class="num" data-label="Monto (U$S)">${fmt(r.monto)}</td>
-            <td data-label="Recibo">R${r.numero} · ${ver}</td>
-            <td data-label="Estado">${est}</td>
-            <td data-label="Acciones">${acciones}</td>
-          `;
-          tbRec.appendChild(tr);
-        });
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td data-label="Período">${r.periodo}</td>
+          <td class="conceptCell" data-label="Concepto">${r.concepto}<div class="small">${(MESES[r.periodo.split("/")[0]] || r.periodo.split("/")[0])} ${r.periodo.split("/")[1]}</div></td>
+          <td class="num" data-label="Monto (U$S)">${fmt(r.monto)}</td>
+          <td data-label="Recibo">R${r.numero} · ${ver}</td>
+          <td data-label="Estado">${est}</td>
+          <td data-label="Acciones">${acciones}</td>
+        `;
+        tbRec.appendChild(tr);
+      });
     }
   }
 
@@ -1169,44 +857,20 @@ function render() {
   });
 
   document.querySelectorAll(".lnkDelRec").forEach(a => {
-    a.onclick = (e) => {
-      e.preventDefault();
-      eliminarReciboPendiente(a.getAttribute("data-id"));
-    };
+    a.onclick = (e) => { e.preventDefault(); eliminarReciboPendiente(a.getAttribute("data-id")); };
   });
 
   document.querySelectorAll(".lnkAnuRec").forEach(a => {
-    a.onclick = (e) => {
-      e.preventDefault();
-      anularReciboImputado(a.getAttribute("data-id"));
-    };
+    a.onclick = (e) => { e.preventDefault(); anularReciboImputado(a.getAttribute("data-id")); };
   });
+
+  // select imputación
+  fillImputarSelect();
 
   const pendientes = state.recibos.filter(r => r.estado === "pendiente");
   if ($("btnImputar")) $("btnImputar").disabled = pendientes.length === 0;
-
-  const sel = $("i_recibo");
-if (sel) {
-  sel.innerHTML = "";
-
-  pendientes
-    .slice()
-    .sort((a, b) => a.numero.localeCompare(b.numero))
-    .forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = r.id;
-      opt.textContent = `R${r.numero} · ${r.periodo} · U$S ${fmt(r.monto)} · ${r.concepto}`;
-      sel.appendChild(opt);
-    });
-
-  // ✅ si hay pendientes, forzá selección válida
-  if (pendientes.length > 0) {
-    if (!sel.value) sel.value = pendientes[0].id;
-    // si el value actual ya no existe, también lo corregimos
-    const ok = pendientes.some(r => r.id === sel.value);
-    if (!ok) sel.value = pendientes[0].id;
-  }
 }
+
 /* =========================
    UI EVENTS
 ========================= */
@@ -1250,18 +914,21 @@ function bindUI() {
 
   if ($("btnImputar")) {
     $("btnImputar").onclick = () => {
+      if (!canWrite) return alert("No tenés permisos de edición.");
+
+      fillImputarSelect();
+
+      const sel = $("i_recibo");
+      if (!sel || sel.options.length === 0) {
+        return alert("No hay recibos pendientes para imputar.");
+      }
+
       $("i_file").value = "";
       $("i_file_info").textContent = "";
       $("i_file_err").textContent = "";
       $("i_preview").innerHTML = "";
       $("i_obs").value = "";
       $("i_declaro").checked = false;
-      // ✅ asegurar que haya un recibo pendiente seleccionado
-const pend = state?.recibos?.filter(r => r.estado === "pendiente") || [];
-const sel = $("i_recibo");
-if (sel && pend.length > 0) {
-  sel.value = pend[0].id; // selecciona el primero sí o sí
-}
       show("modalImputar");
     };
   }
@@ -1287,9 +954,7 @@ if (sel && pend.length > 0) {
 
       if (f.type.startsWith("image/")) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          $("i_preview").innerHTML = `<img src="${e.target.result}" alt="preview" />`;
-        };
+        reader.onload = (e) => { $("i_preview").innerHTML = `<img src="${e.target.result}" alt="preview" />`; };
         reader.readAsDataURL(f);
       } else {
         $("i_preview").innerHTML = `<div class="small">PDF seleccionado</div>`;
@@ -1299,65 +964,81 @@ if (sel && pend.length > 0) {
 
   if ($("i_confirm")) {
     $("i_confirm").onclick = async () => {
-      if (!canWrite) return alert("No tenés permisos de edición.");
+      try {
+        if (!canWrite) return alert("No tenés permisos de edición.");
 
-      const recId = $("i_recibo").value;
-      const rec = state.recibos.find(r => r.id === recId && r.estado === "pendiente");
-      if (!rec) return alert("Elegí un recibo pendiente válido.");
+        const recId = $("i_recibo").value;
+        const rec = state.recibos.find(r => r.id === recId && r.estado === "pendiente");
+        if (!rec) return alert("Elegí un recibo pendiente válido.");
 
-      const file = $("i_file").files && $("i_file").files[0];
-      if (!file) return alert("Adjuntar recibo firmado es obligatorio.");
+        const file = $("i_file").files && $("i_file").files[0];
+        if (!file) return alert("Adjuntar recibo firmado es obligatorio.");
 
-      const okType = (file.type.startsWith("image/") || file.type === "application/pdf");
-      if (!okType) return alert("Tipo inválido. Debe ser imagen o PDF.");
+        const okType = (file.type.startsWith("image/") || file.type === "application/pdf");
+        if (!okType) return alert("Tipo inválido. Debe ser imagen o PDF.");
 
-      if (!$("i_declaro").checked) {
-        return alert("Debés declarar que el adjunto corresponde al recibo y está firmado por ambas partes.");
+        if (!$("i_declaro").checked) {
+          return alert("Debés declarar que el adjunto corresponde al recibo y está firmado por ambas partes.");
+        }
+
+        const obs = String($("i_obs").value || "").trim();
+
+        // Construye adjunto para Firestore (optimiza imagen)
+        let adjunto;
+        try {
+          adjunto = await buildAdjuntoForFirestore(file);
+        } catch (e) {
+          if (String(e?.message || e) === "ADJUNTO_DEMASIADO_GRANDE" || String(e) === "ADJUNTO_DEMASIADO_GRANDE") {
+            return alert("El adjunto es demasiado grande para guardarlo en Firestore. Sacá la foto más cerca / menor resolución, o mandalo como imagen recortada.");
+          }
+          if (String(e?.message || e) === "PDF_DEMASIADO_GRANDE" || String(e) === "PDF_DEMASIADO_GRANDE") {
+            return alert("El PDF es demasiado grande para guardarlo en Firestore. Convertí a imagen o reducilo.");
+          }
+          return alert("No pude preparar el adjunto (tipo o tamaño inválido).");
+        }
+
+        state.movs.push({
+          id: crypto.randomUUID(),
+          periodo: rec.periodo,
+          concepto: rec.concepto,
+          debito: 0,
+          credito: rec.monto,
+          recibo_num: rec.numero,
+          adjunto,
+          obs: obs || null
+        });
+
+        rec.estado = "imputado";
+
+        const ok = await saveState();
+        if (!ok) return;
+
+        hide("modalImputar");
+        render();
+
+        const to = "l.linracioppi@gmail.com";
+        const cc = "l.linracioppi@gmail.com";
+        const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
+        const body = [
+          "Se registró una imputación de pago.",
+          "",
+          `Recibo: R${rec.numero}`,
+          `Período: ${rec.periodo}`,
+          `Monto: U$S ${fmt(rec.monto)}`,
+          `Concepto: ${rec.concepto}`,
+          `Obs.: ${obs || ""}`,
+          "",
+          "Cuenta: Bertinelli / Lin Racioppi"
+        ].join("\\n");
+
+        abrirMailImputacion({ to, cc, subject, body });
+
+      } catch (err) {
+        console.error(err);
+        alert("Falló la imputación por un error inesperado (mirá consola).");
       }
-
-      const obs = String($("i_obs").value || "").trim();
-
-      // Guardar adjunto dentro de Firestore como DataURL (SIN Storage)
-      const dataUrl = await fileToDataUrl(file);
-
-      state.movs.push({
-        id: crypto.randomUUID(),
-        periodo: rec.periodo,
-        concepto: rec.concepto,
-        debito: 0,
-        credito: rec.monto,
-        recibo_num: rec.numero,
-        adjunto: { name: file.name, type: file.type, dataUrl },
-        obs: obs || null
-      });
-
-      rec.estado = "imputado";
-      const ok = await saveState();
-      if (!ok) return;
-
-      hide("modalImputar");
-      render();
-
-      const to = "l.linracioppi@gmail.com";
-      const cc = "l.linracioppi@gmail.com";
-      const subject = `Imputación de pago – Recibo R${rec.numero} – ${rec.periodo}`;
-      const body = [
-        "Se registró una imputación de pago.",
-        "",
-        `Recibo: R${rec.numero}`,
-        `Período: ${rec.periodo}`,
-        `Monto: U$S ${fmt(rec.monto)}`,
-        `Concepto: ${rec.concepto}`,
-        `Obs.: ${obs || ""}`,
-        "",
-        "Cuenta: Bertinelli / Lin Racioppi"
-      ].join("\\n");
-
-      abrirMailImputacion({ to, cc, subject, body });
     };
   }
-
-  if ($("btnPrintPlan")) $("btnPrintPlan").onclick = () => printPlanYAcuerdo(state);
 
   if ($("btnExport")) {
     $("btnExport").onclick = () => {
@@ -1392,6 +1073,7 @@ if (sel && pend.length > 0) {
               return alert("JSON inválido.");
             }
             state = obj;
+            if (!state._meta) state._meta = { rev: 0, updatedAt: Date.now(), updatedBy: who() };
             const ok = await saveState();
             if (!ok) return;
             render();
@@ -1414,12 +1096,10 @@ if (sel && pend.length > 0) {
 }
 
 /* =========================
-   INIT (ÚNICO)
+   INIT
 ========================= */
 mountAuthUI();
 bindUI();
-
-let realtimeBound = false;
 
 onAuthStateChanged(auth, async (user) => {
   console.log("AUTH:", { uid: user?.uid, email: user?.email });
@@ -1435,11 +1115,9 @@ onAuthStateChanged(auth, async (user) => {
     if (authStatus) authStatus.textContent = "Modo editor habilitado";
     if (btnLogout) btnLogout.style.display = "";
     setEditorUI();
-    syncAuthSummary(true);
   } else {
     canWrite = false;
     setViewerUI();
-    syncAuthSummary(false);
 
     if (user) {
       if (authStatus) authStatus.textContent = "Logueado sin permisos de edición (solo lectura)";
