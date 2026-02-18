@@ -1,9 +1,20 @@
-// app.js (único archivo JS) — SOLO FIREBASE (sin localStorage)
+// app.js (único archivo JS) — SOLO FIREBASE (sin localStorage, sin Storage)
 // Importante: este archivo debe cargarse como <script type="module" src="./app.js"></script>
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 /* =========================
    FIREBASE INIT
@@ -12,7 +23,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAuIf3Hv2ymT4AP3tdg2IOIEnTaYUez7eU",
   authDomain: "cuenta-c-bertinelli-lin.firebaseapp.com",
   projectId: "cuenta-c-bertinelli-lin",
-messagingSenderId: "456522423280",
+  messagingSenderId: "456522423280",
   appId: "1:456522423280:web:e26a3ad2c45d27117f9b35"
 };
 
@@ -42,8 +53,8 @@ const MESES = {
   "09": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
 };
 
-function show(id) { $(id).classList.add("show"); }
-function hide(id) { $(id).classList.remove("show"); }
+function show(id) { $(id)?.classList.add("show"); }
+function hide(id) { $(id)?.classList.remove("show"); }
 function isPeriodo(x) { return /^\d{2}\/\d{4}$/.test(String(x || "").trim()); }
 
 function periodoActual() {
@@ -60,7 +71,7 @@ async function pushRemote(state) {
   if (!canWrite) throw new Error("NO_WRITE");
   if (applyingRemote) return;
 
-  // 🔑 fuerza refresh del token de auth ANTES de escribir
+  // fuerza refresh del token de auth ANTES de escribir
   if (auth.currentUser) {
     await auth.currentUser.getIdToken(true);
   }
@@ -223,6 +234,7 @@ function nextReciboNum2(state) {
   return String(state.recibo_seq).padStart(2, "0");
 }
 
+// Convierte un archivo (imagen o pdf) a DataURL para guardarlo en Firestore (sin Storage)
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -230,19 +242,6 @@ function fileToDataUrl(file) {
     r.onerror = reject;
     r.readAsDataURL(file);
   });
-}
-
-
-  await uploadBytes(storageRef, file, metadata);
-  const url = await getDownloadURL(storageRef);
-
-  return {
-    name: safeName,
-    type: file.type || "application/octet-stream",
-    url,
-    path,
-    size: Number(file.size || 0)
-  };
 }
 
 function abrirMailImputacion({ to, cc, subject, body }) {
@@ -594,7 +593,7 @@ function abrirAdjunto(adjunto){
     return;
   }
 
-  const isPdf = (adjunto.type || "").includes("pdf") || String(src).includes(".pdf");
+  const isPdf = (adjunto.type || "").includes("pdf") || String(src).includes("application/pdf");
   const title = `Adjunto – ${safeName}`;
 
   const html = `
@@ -647,6 +646,7 @@ function abrirAdjunto(adjunto){
   w.document.write(html);
   w.document.close();
 }
+
 /* =========================
    ACUERDO + ANEXO
 ========================= */
@@ -874,6 +874,8 @@ function printPlanYAcuerdo(state) {
 ========================= */
 function mountAuthUI() {
   const authBar = $("authBar");
+  if (!authBar) return;
+
   authBar.innerHTML = `
     <span class="status" id="authStatus">Modo visualizador (solo lectura)</span>
     <input id="loginEmail" type="email" placeholder="Email editor" />
@@ -1300,21 +1302,21 @@ function bindUI() {
         return alert("Debés declarar que el adjunto corresponde al recibo y está firmado por ambas partes.");
       }
 
-const obs = String($("i_obs").value || "").trim();
+      const obs = String($("i_obs").value || "").trim();
 
-// ✅ Guardar adjunto dentro de Firestore como DataURL (SIN Storage)
-const dataUrl = await fileToDataUrl(file);
+      // Guardar adjunto dentro de Firestore como DataURL (SIN Storage)
+      const dataUrl = await fileToDataUrl(file);
 
-state.movs.push({
-  id: crypto.randomUUID(),
-  periodo: rec.periodo,
-  concepto: rec.concepto,
-  debito: 0,
-  credito: rec.monto,
-  recibo_num: rec.numero,
-  adjunto: { name: file.name, type: file.type, dataUrl },
-  obs: obs || null
-});
+      state.movs.push({
+        id: crypto.randomUUID(),
+        periodo: rec.periodo,
+        concepto: rec.concepto,
+        debito: 0,
+        credito: rec.monto,
+        recibo_num: rec.numero,
+        adjunto: { name: file.name, type: file.type, dataUrl },
+        obs: obs || null
+      });
 
       rec.estado = "imputado";
       const ok = await saveState();
@@ -1407,11 +1409,12 @@ bindUI();
 let realtimeBound = false;
 
 onAuthStateChanged(auth, async (user) => {
-   console.log("AUTH:", { uid: user?.uid, email: user?.email });
+  console.log("AUTH:", { uid: user?.uid, email: user?.email });
+
   const authStatus = $("authStatus");
   const btnLogout = $("btnLogout");
 
-  currentUid = user ? user.uid : null;   
+  currentUid = user ? user.uid : null;
   const isEditor = !!user && user.uid === EDITOR_UID;
 
   if (isEditor) {
