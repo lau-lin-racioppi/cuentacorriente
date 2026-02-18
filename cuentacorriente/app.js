@@ -12,8 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAuIf3Hv2ymT4AP3tdg2IOIEnTaYUez7eU",
   authDomain: "cuenta-c-bertinelli-lin.firebaseapp.com",
   projectId: "cuenta-c-bertinelli-lin",
-  storageBucket: "cuenta-c-bertinelli-lin.appspot.com",
-  messagingSenderId: "456522423280",
+messagingSenderId: "456522423280",
   appId: "1:456522423280:web:e26a3ad2c45d27117f9b35"
 };
 
