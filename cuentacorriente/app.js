@@ -391,9 +391,24 @@ function estimacionFin(plan) {
 }
 
 /* =========================
-   ACUERDO + PLAN PRINT
+   ACUERDO FIRMADO (archivo estático)
 ========================= */
-function openAcuerdoPrint(st) {
+// Cuando tengas el archivo firmado, reemplazá el nombre acá:
+const ACUERDO_FILE = "./acuerdo-firmado.jpg"; // cambiar a .pdf cuando corresponda
+
+function abrirAcuerdoFirmado() {
+  const isPdf = ACUERDO_FILE.endsWith(".pdf");
+  abrirAdjunto({
+    name: "Acuerdo Privado firmado – Bertinelli / Lin Racioppi",
+    type: isPdf ? "application/pdf" : "image/jpeg",
+    url: ACUERDO_FILE
+  });
+}
+
+/* =========================
+   PLAN DE PAGOS PRINT
+========================= */
+function openPlanPrint(st) {
   const plan = aplicarPagosAlPlan(generarPlanBase(st), st);
   const { fin, cuotasRestantes } = estimacionFin(plan);
   const saldoRestante = Math.max(0, Number(st.meta.saldo_inicial || 0) - totalPagado(st));
@@ -415,7 +430,7 @@ function openAcuerdoPrint(st) {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</title>
+<title>Plan de Pagos – Bertinelli / Lin Racioppi</title>
 <style>
   @page{ size:A4 portrait; margin:0; }
   *{ box-sizing:border-box }
@@ -448,62 +463,15 @@ function openAcuerdoPrint(st) {
 </head>
 <body>
 <div class="topbar">
-  <div class="ttl">Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</div>
+  <div class="ttl">Plan de Pagos – Bertinelli / Lin Racioppi</div>
   <button class="btn" onclick="window.print()">Imprimir</button>
 </div>
 <div class="page">
 
-  <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
-  <p class="fecha">Buenos Aires, 31 de enero de 2026</p>
+  <h1>PLAN DE PAGOS PROYECTADO</h1>
+  <p class="fecha">Cuenta Corriente – Bertinelli / Lin Racioppi</p>
 
-  <p>
-    Entre el Sr. <b>José Orlando BERTINELLI</b>, DNI <b>11.824.116</b>, en adelante <b>EL VENDEDOR</b>, y el Sr.
-    <b>Lautaro Nahuel LIN RACIOPPI</b>, DNI <b>41.757.592</b>, en adelante <b>EL COMPRADOR</b>, se celebra el
-    presente acuerdo, sujeto a las siguientes cláusulas:
-  </p>
-
-  <p><b>PRIMERA – Antecedentes.</b> Las partes manifiestan que celebraron la compraventa del inmueble sito en
-    <b>25 de Mayo 8, 6° C, Ciudadela</b>, instrumentada mediante <b>Escritura Pública Nº 434</b>, pasada ante el
-    <b>Registro Notarial Nº 30</b>, referida al mes de <b>diciembre 2025</b>.
-  </p>
-
-  <p><b>SEGUNDA – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó en
-    concepto de entrega inicial la suma de <b>U$S 5.000</b>, quedando el saldo convenido en cuenta corriente
-    determinado en función de dicha entrega.
-  </p>
-
-  <p><b>TERCERA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por
-    <b>U$S 8.150</b>.</p>
-
-  <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) enero 2026: U$S 150; b) desde
-    el período siguiente: pagos mensuales de referencia de U$S 500 hasta cancelar el saldo.</p>
-
-  <p><b>QUINTA – Adelantos.</b> El COMPRADOR podrá efectuar pagos adelantados o superiores sin penalidad.
-    Dichos adelantos se imputarán al saldo y acortarán la duración total del plan.</p>
-
-  <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar
-    el saldo hasta cero.</p>
-
-  <p><b>SÉPTIMA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
-
-  <p><b>OCTAVA – Naturaleza.</b> El presente acuerdo es complementario de la escritura referida y regula
-    exclusivamente la modalidad de cancelación del saldo pendiente.</p>
-
-  <p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor, en la ciudad de Buenos Aires,
-    en la fecha indicada al inicio.</p>
-
-  <div class="signRow">
-    <div class="sign">
-      <div class="line"></div>
-      <div class="lbl">Firma EL VENDEDOR</div>
-    </div>
-    <div class="sign">
-      <div class="line"></div>
-      <div class="lbl">Firma EL COMPRADOR</div>
-    </div>
-  </div>
-
-  <h2>Anexo – Plan de pagos proyectado</h2>
+  <h2>Plan de pagos</h2>
   <div class="resumen">
     <div class="item"><span class="lbl">Saldo restante</span><span class="val">USD ${fmt(saldoRestante)}</span></div>
     <div class="item"><span class="lbl">Cuotas restantes</span><span class="val">${cuotasRestantes}</span></div>
@@ -986,10 +954,14 @@ function render() {
    UI EVENTS
 ========================= */
 function bindUI() {
-  if ($("btnPrintPlan")) {
-    $("btnPrintPlan").onclick = () => {
+  if ($("btnVerAcuerdo")) {
+    $("btnVerAcuerdo").onclick = () => abrirAcuerdoFirmado();
+  }
+
+  if ($("btnVerPlan")) {
+    $("btnVerPlan").onclick = () => {
       if (!state) return alert("Cargando datos, intentá en un momento.");
-      openAcuerdoPrint(state);
+      openPlanPrint(state);
     };
   }
 
