@@ -12,8 +12,6 @@
   --chip:#0e1426;
   --ok:#16a34a;
   --warn:#f59e0b;
-
-  
   --modalBackdrop: rgba(0,0,0,.72);
 }
 
@@ -26,7 +24,12 @@ body{
               var(--bg);
   color:var(--text);
 }
-.wrap{max-width:1200px;margin:auto;padding:18px}
+.wrap{
+  max-width:1200px;
+  margin:auto;
+  padding:12px;
+}
+@media (min-width:600px){ .wrap{ padding:18px } }
 
 .card{
   background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
@@ -40,19 +43,20 @@ body{
 /* ===== TOP LAYOUT ===== */
 .top{
   display:grid;
-  grid-template-columns: 1.2fr .8fr;
-  gap:14px;
+  grid-template-columns:1fr;
+  gap:12px;
   align-items:start;
 }
-@media (max-width: 980px){
-  .top{grid-template-columns:1fr}
+@media (min-width:980px){
+  .top{ grid-template-columns:1.2fr .8fr; gap:14px }
 }
 
 h1{
   margin:0;
-  font-size:22px;
+  font-size:18px;
   letter-spacing:.2px;
 }
+@media (min-width:600px){ h1{ font-size:22px } }
 .subhead{color:var(--muted);font-size:12.5px;margin-top:6px}
 
 /* ===== LOGIN COLLAPSIBLE ===== */
@@ -71,7 +75,7 @@ details.authDetails > summary{
   justify-content:space-between;
   gap:10px;
   user-select:none;
-  min-height: 44px;
+  min-height:44px;
 }
 details.authDetails > summary::-webkit-details-marker{display:none}
 
@@ -87,7 +91,6 @@ details.authDetails > summary::-webkit-details-marker{display:none}
 }
 .authSummary .txt{font-size:12.5px}
 
-/* flecha chica SIEMPRE */
 .authChevron{
   width:16px;height:16px;opacity:.9;flex:0 0 auto;
   transform-origin:center;
@@ -99,14 +102,12 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
   gap:10px;
   flex-wrap:wrap;
   align-items:center;
-  justify-content:flex-end;
+  justify-content:flex-start;
   padding:10px 12px 12px 12px;
   background: rgba(0,0,0,.10);
   border-top:1px solid var(--line2);
 }
-@media (max-width: 980px){
-  .auth{justify-content:flex-start}
-}
+@media (min-width:980px){ .auth{ justify-content:flex-end } }
 
 .auth .status{color:var(--muted);font-size:12px}
 .auth input{
@@ -116,7 +117,7 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
   border-radius:12px;
   padding:10px 12px;
   outline:none;
-  width: min(240px, 100%);
+  width:min(240px, 100%);
 }
 .auth input::placeholder{color: rgba(233,236,241,.55)}
 .auth .btn{
@@ -128,24 +129,22 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
   font-weight:750;
   cursor:pointer;
 }
-/* Entrar SIN color */
 .auth .btn.primary{
   background: rgba(255,255,255,.06);
   border-color: var(--line2);
 }
 .auth .btn:disabled{opacity:.55;cursor:not-allowed}
 
-/* ===== CTA + SALDO ===== */
+/* ===== SALDO + CTA ===== */
 .heroRow{
   display:grid;
-  grid-template-columns: 1fr auto;
-  gap:14px;
-  align-items:stretch;
-  margin-top:14px;
-  margin-bottom: 14px;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin-top:12px;
+  margin-bottom:12px;
 }
-@media (max-width: 980px){
-  .heroRow{grid-template-columns:1fr}
+@media (min-width:980px){
+  .heroRow{ grid-template-columns:1fr auto; gap:14px; align-items:stretch; margin-top:14px; margin-bottom:14px }
 }
 
 .saldoPill{
@@ -153,38 +152,42 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
   background: linear-gradient(180deg, rgba(37,99,235,.18), rgba(37,99,235,.06));
   border-radius:18px;
   padding:14px 16px;
-  min-height:92px;
+  min-height:80px;
   display:flex;
   flex-direction:column;
   justify-content:center;
 }
+@media (min-width:980px){ .saldoPill{ min-height:92px } }
 .saldoPill .ttl{font-size:12px;color:#cfe0ff;letter-spacing:.2px}
 .saldoPill .amt{
-  font-size:34px;
+  font-size:28px;
   font-weight:900;
   margin:4px 0 2px 0;
   line-height:1.05;
 }
+@media (min-width:600px){ .saldoPill .amt{ font-size:34px } }
 .saldoPill .extra{
   color: rgba(233,236,241,.82);
-  font-size:12.5px;
+  font-size:11.5px;
+  line-height:1.4;
 }
+@media (min-width:600px){ .saldoPill .extra{ font-size:12.5px } }
 
 .ctaCol{
   display:flex;
   flex-direction:column;
   gap:10px;
   justify-content:stretch;
-  min-width: 340px;
 }
-@media (max-width: 980px){
-  .ctaCol{min-width:unset}
-}
+@media (min-width:980px){ .ctaCol{ min-width:340px } }
 
-.btnRow{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-@media (max-width: 980px){
-  .btnRow{justify-content:flex-start}
+.btnRow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-start;
 }
+@media (min-width:980px){ .btnRow{ gap:10px; justify-content:flex-end } }
 
 .btn{
   border:1px solid var(--line2);
@@ -195,10 +198,13 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
   font-weight:800;
   cursor:pointer;
   display:inline-flex;
-  gap:10px;
+  gap:8px;
   align-items:center;
   line-height:1;
+  min-height:44px;
+  font-size:13px;
 }
+@media (min-width:600px){ .btn{ gap:10px; font-size:inherit } }
 .btn.primary{
   background: linear-gradient(180deg, rgba(37,99,235,.95), rgba(29,78,216,.95));
   border-color: rgba(29,78,216,.9);
@@ -209,7 +215,6 @@ details.authDetails[open] .authChevron{ transform: rotate(180deg); }
 }
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* CTA “Ver acuerdo + plan” */
 .btn.agreement{
   background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.06));
   border-color: rgba(147,197,253,.35);
@@ -228,11 +233,12 @@ details.section{
 details.section > summary{
   list-style:none;
   cursor:pointer;
-  padding:12px 12px;
+  padding:12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
+  min-height:44px;
 }
 details.section > summary::-webkit-details-marker{display:none}
 .sumLeft{display:flex;gap:10px;align-items:center}
@@ -241,25 +247,28 @@ details.section > summary::-webkit-details-marker{display:none}
   display:grid;place-items:center;
   background: rgba(37,99,235,.18);
   border:1px solid rgba(37,99,235,.25);
+  flex-shrink:0;
 }
 .sumTitle{font-weight:850}
 .sumDesc{font-size:12px;color:var(--muted);margin-top:2px}
 .sumText{display:flex;flex-direction:column}
 .sumRight{
-  display:inline-flex;align-items:center;gap:10px;
+  display:inline-flex;align-items:center;gap:8px;
   color: rgba(233,236,241,.9);
   font-weight:850;
-  font-size:12.5px;
-  padding:8px 10px;
+  font-size:12px;
+  padding:6px 10px;
   border-radius:999px;
   border:1px solid var(--line2);
   background: rgba(255,255,255,.05);
+  flex-shrink:0;
+  white-space:nowrap;
 }
 .sumRight svg{width:16px;height:16px}
 details.section[open] .sumRight svg{transform: rotate(180deg)}
-.sectionBody{padding:0 12px 12px 12px}
+.sectionBody{padding:0 12px 12px 12px;font-size:13.5px;line-height:1.6}
 
-/* ===== TABLAS RESPONSIVE SIN SCROLL HORIZONTAL ===== */
+/* ===== TABLAS RESPONSIVE — mobile: card list ===== */
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 th,td{border-bottom:1px solid var(--line2);padding:10px 8px;vertical-align:top}
 th{color:var(--muted);text-align:left;font-weight:800}
@@ -267,7 +276,6 @@ td.num{text-align:right;white-space:nowrap}
 a{color:#93c5fd;text-decoration:none}
 a:hover{text-decoration:underline}
 
-/* concepto SIEMPRE horizontal */
 td.conceptCell{
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
@@ -278,35 +286,45 @@ td.conceptCell{
   line-height:1.25;
 }
 
-/* “lista” mobile */
-@media (max-width: 900px){
-  table, thead, tbody, th, tr{display:block}
-  thead{display:none}
-  tbody{display:block}
-  tr{
-    border:1px solid var(--line2);
-    border-radius:14px;
-    margin:10px 0;
-    background: rgba(255,255,255,.03);
-    overflow:hidden;
-  }
-  td{
-    display:flex;
-    gap:12px;
-    justify-content:space-between;
-    align-items:flex-start;
-    border-bottom:1px solid rgba(35,48,73,.55);
-    padding:10px 12px;
-  }
-  td::before{
-    content: attr(data-label);
-    color: var(--muted);
-    font-weight:800;
-    min-width: 120px;
-    max-width: 45%;
-  }
-  td.num{justify-content:space-between}
-  td.num::before{white-space:nowrap}
+/* mobile: tabla como lista de cards */
+table, thead, tbody, th, tr{ display:block }
+thead{ display:none }
+tbody{ display:block }
+tr{
+  border:1px solid var(--line2);
+  border-radius:14px;
+  margin:10px 0;
+  background: rgba(255,255,255,.03);
+  overflow:hidden;
+}
+td{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  align-items:flex-start;
+  border-bottom:1px solid rgba(35,48,73,.55);
+  padding:10px 12px;
+}
+td::before{
+  content: attr(data-label);
+  color: var(--muted);
+  font-weight:800;
+  min-width:110px;
+  max-width:45%;
+  flex-shrink:0;
+}
+td.num{ justify-content:space-between }
+td.num::before{ white-space:nowrap }
+
+/* desktop: tabla clásica */
+@media (min-width:900px){
+  table{ display:table }
+  thead{ display:table-header-group }
+  tbody{ display:table-row-group }
+  tr{ display:table-row; border:none; border-radius:0; margin:0; background:transparent; overflow:visible }
+  td{ display:table-cell; border-bottom:1px solid var(--line2); padding:10px 8px }
+  td::before{ display:none }
+  td.num{ text-align:right }
 }
 
 .muted{color:var(--muted);font-size:12px}
@@ -318,12 +336,15 @@ td.conceptCell{
   position:fixed; inset:0;
   display:none;
   background: var(--modalBackdrop);
-  padding:14px;
+  padding:10px;
   overflow:auto;
   -webkit-overflow-scrolling: touch;
-  align-items:stretch;
+  align-items:flex-start;
   justify-content:center;
   backdrop-filter: blur(6px);
+}
+@media (min-width:600px){
+  .modal{ padding:14px; align-items:center }
 }
 .modal.show{display:flex}
 .modal .card{
@@ -332,8 +353,8 @@ td.conceptCell{
   border-color: rgba(147,197,253,.18);
 }
 
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:900px){ .grid{grid-template-columns:1fr} }
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:600px){ .grid{ grid-template-columns:1fr 1fr } }
 
 select, textarea, input[type="text"], input[type="number"], input[type="password"], input[type="email"]{
   background: rgba(0,0,0,.22);
@@ -343,6 +364,12 @@ select, textarea, input[type="text"], input[type="number"], input[type="password
   padding:10px 12px;
   width:100%;
   outline:none;
+  font-size:16px; /* evita zoom en iOS */
+}
+@media (min-width:600px){
+  select, textarea, input[type="text"], input[type="number"], input[type="password"], input[type="email"]{
+    font-size:inherit;
+  }
 }
 textarea{min-height:80px;resize:vertical}
 
