@@ -847,7 +847,7 @@ function render() {
   const saldoRestante = Math.max(0, Number(state.meta.saldo_inicial || 0) - totalPagado(state));
 
   if ($("saldoGrande")) $("saldoGrande").textContent = "U$S " + fmt(saldo);
-  if ($("saldoExtra")) $("saldoExtra").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
+  if ($("saldoExtra")) $("saldoExtra").textContent = `Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
 
   const tbRec = $("tbodyRec");
   if (tbRec) {
