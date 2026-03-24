@@ -391,6 +391,148 @@ function estimacionFin(plan) {
 }
 
 /* =========================
+   ACUERDO + PLAN PRINT
+========================= */
+function openAcuerdoPrint(st) {
+  const plan = aplicarPagosAlPlan(generarPlanBase(st), st);
+  const { fin, cuotasRestantes } = estimacionFin(plan);
+  const saldoRestante = Math.max(0, Number(st.meta.saldo_inicial || 0) - totalPagado(st));
+
+  const filasPlan = plan.map(p => {
+    const estadoColor = p.estado === "Pagado" ? "#16a34a" : (p.estado === "Parcial" ? "#d97706" : "#6b7280");
+    return `<tr>
+      <td>${p.periodo}</td>
+      <td>${p.concepto}</td>
+      <td class="num">${fmt(p.cuota)}</td>
+      <td style="color:${estadoColor};font-weight:700">${p.estado}</td>
+      <td class="num">${fmt(p.saldo_proyectado)}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</title>
+<style>
+  @page{ size:A4 portrait; margin:0; }
+  *{ box-sizing:border-box }
+  body{ margin:0; font-family:system-ui,Segoe UI,Arial; color:#111; background:#fff; font-size:13.5px; line-height:1.65; }
+  :root{ --barH:56px; --PAD:14mm; }
+  .topbar{ position:sticky; top:0; z-index:10; height:var(--barH); display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; background:#fff; border-bottom:1px solid #e5e7eb; }
+  .topbar .ttl{ font-size:14px; font-weight:900 }
+  .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 14px; border-radius:10px; font-weight:800; cursor:pointer; font-size:13px }
+  .page{ width:210mm; min-height:297mm; padding:var(--PAD); margin:0 auto; }
+  h1{ font-size:16px; font-weight:900; text-align:center; margin:0 0 4px 0; text-transform:uppercase; letter-spacing:.5px }
+  .fecha{ text-align:center; color:#444; margin:0 0 18px 0; font-size:13px }
+  p{ margin:0 0 10px 0; text-align:justify; text-justify:inter-word; hyphens:auto; -webkit-hyphens:auto }
+  h2{ font-size:13.5px; font-weight:900; margin:22px 0 8px 0; border-bottom:1px solid #ddd; padding-bottom:3px; text-transform:uppercase; letter-spacing:.3px }
+  .resumen{ background:#f8f9fa; border:1px solid #e2e8f0; border-radius:8px; padding:10px 16px; margin:10px 0 16px 0; display:flex; gap:28px; flex-wrap:wrap }
+  .resumen .item{ display:flex; flex-direction:column; gap:1px }
+  .resumen .lbl{ font-size:11px; color:#666 }
+  .resumen .val{ font-size:14px; font-weight:900 }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px }
+  th{ background:#f1f5f9; text-align:left; padding:7px 8px; font-weight:800; color:#334155; border-bottom:2px solid #cbd5e1 }
+  td{ padding:6px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top }
+  td.num{ text-align:right; white-space:nowrap }
+  tr:last-child td{ border-bottom:none }
+  .signRow{ display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:48px }
+  .sign .line{ border-top:1px solid #111; margin-top:56px }
+  .sign .lbl{ font-size:12px; color:#444; margin-top:6px }
+  @media screen{ body{ background:#e5e7eb } .page{ background:#fff; margin:12px auto; box-shadow:0 4px 24px rgba(0,0,0,.12); border-radius:8px } }
+  @media (max-width:900px){ .page{ width:calc(100vw - 16px); padding:16px } }
+  @media print{ .topbar{ display:none } body{ background:#fff } .page{ box-shadow:none; margin:0; border-radius:0 } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="ttl">Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</div>
+  <button class="btn" onclick="window.print()">Imprimir</button>
+</div>
+<div class="page">
+
+  <h1>ACUERDO PRIVADO DE CANCELACIÓN DE SALDO</h1>
+  <p class="fecha">Buenos Aires, 31 de enero de 2026</p>
+
+  <p>
+    Entre el Sr. <b>José Orlando BERTINELLI</b>, DNI <b>11.824.116</b>, en adelante <b>EL VENDEDOR</b>, y el Sr.
+    <b>Lautaro Nahuel LIN RACIOPPI</b>, DNI <b>41.757.592</b>, en adelante <b>EL COMPRADOR</b>, se celebra el
+    presente acuerdo, sujeto a las siguientes cláusulas:
+  </p>
+
+  <p><b>PRIMERA – Antecedentes.</b> Las partes manifiestan que celebraron la compraventa del inmueble sito en
+    <b>25 de Mayo 8, 6° C, Ciudadela</b>, instrumentada mediante <b>Escritura Pública Nº 434</b>, pasada ante el
+    <b>Registro Notarial Nº 30</b>, referida al mes de <b>diciembre 2025</b>.
+  </p>
+
+  <p><b>SEGUNDA – Entrega inicial ya efectuada.</b> Las partes dejan constancia de que el COMPRADOR entregó en
+    concepto de entrega inicial la suma de <b>U$S 5.000</b>, quedando el saldo convenido en cuenta corriente
+    determinado en función de dicha entrega.
+  </p>
+
+  <p><b>TERCERA – Saldo pendiente.</b> Las partes reconocen un saldo pendiente a cargo del COMPRADOR por
+    <b>U$S 8.150</b>.</p>
+
+  <p><b>CUARTA – Forma de pago.</b> El saldo será cancelado conforme esquema: a) enero 2026: U$S 150; b) desde
+    el período siguiente: pagos mensuales de referencia de U$S 500 hasta cancelar el saldo.</p>
+
+  <p><b>QUINTA – Adelantos.</b> El COMPRADOR podrá efectuar pagos adelantados o superiores sin penalidad.
+    Dichos adelantos se imputarán al saldo y acortarán la duración total del plan.</p>
+
+  <p><b>SEXTA – Carácter.</b> El plan se recalcula por adelantos, manteniéndose la obligación de cancelar
+    el saldo hasta cero.</p>
+
+  <p><b>SÉPTIMA – Recibos.</b> Cada pago se documentará mediante recibo firmado por ambas partes.</p>
+
+  <p><b>OCTAVA – Naturaleza.</b> El presente acuerdo es complementario de la escritura referida y regula
+    exclusivamente la modalidad de cancelación del saldo pendiente.</p>
+
+  <p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor, en la ciudad de Buenos Aires,
+    en la fecha indicada al inicio.</p>
+
+  <div class="signRow">
+    <div class="sign">
+      <div class="line"></div>
+      <div class="lbl">Firma EL VENDEDOR</div>
+    </div>
+    <div class="sign">
+      <div class="line"></div>
+      <div class="lbl">Firma EL COMPRADOR</div>
+    </div>
+  </div>
+
+  <h2>Anexo – Plan de pagos proyectado</h2>
+  <div class="resumen">
+    <div class="item"><span class="lbl">Saldo restante</span><span class="val">USD ${fmt(saldoRestante)}</span></div>
+    <div class="item"><span class="lbl">Cuotas restantes</span><span class="val">${cuotasRestantes}</span></div>
+    <div class="item"><span class="lbl">Fin estimado</span><span class="val">${fin}</span></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:100px">Período</th>
+        <th>Concepto</th>
+        <th style="width:110px;text-align:right">Monto (U$S)</th>
+        <th style="width:90px">Estado</th>
+        <th style="width:130px;text-align:right">Saldo proyectado</th>
+      </tr>
+    </thead>
+    <tbody>${filasPlan}</tbody>
+  </table>
+
+</div>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank");
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+/* =========================
    RECIBO PRINT (igual que tenías)
 ========================= */
 function openReciboPrint(st, rec, modo, saldoLuego) {
@@ -844,6 +986,13 @@ function render() {
    UI EVENTS
 ========================= */
 function bindUI() {
+  if ($("btnPrintPlan")) {
+    $("btnPrintPlan").onclick = () => {
+      if (!state) return alert("Cargando datos, intentá en un momento.");
+      openAcuerdoPrint(state);
+    };
+  }
+
   if ($("btnEmitir")) {
     $("btnEmitir").onclick = () => {
       $("e_periodo").value = periodoActual();
