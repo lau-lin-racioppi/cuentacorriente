@@ -315,6 +315,8 @@ td::before{
 }
 td.num{ justify-content:space-between }
 td.num::before{ white-space:nowrap }
+td.conceptCell{ flex-direction:column; gap:4px }
+td.conceptCell::before{ min-width:unset; max-width:unset }
 
 /* desktop: tabla clásica */
 @media (min-width:900px){
