@@ -391,124 +391,6 @@ function estimacionFin(plan) {
 }
 
 /* =========================
-   ACUERDO + PLAN PRINT
-========================= */
-function openAcuerdoPrint(st) {
-  const plan = aplicarPagosAlPlan(generarPlanBase(st), st);
-  const { fin, cuotasRestantes } = estimacionFin(plan);
-  const saldoRestante = Math.max(0, Number(st.meta.saldo_inicial || 0) - totalPagado(st));
-
-  const filasPlan = plan.map(p => {
-    const estadoColor = p.estado === "Pagado" ? "#16a34a" : (p.estado === "Parcial" ? "#f59e0b" : "#6b7280");
-    return `<tr>
-      <td>${p.periodo}</td>
-      <td>${p.concepto}</td>
-      <td style="text-align:right">${fmt(p.cuota)}</td>
-      <td style="color:${estadoColor};font-weight:700">${p.estado}</td>
-      <td style="text-align:right">${fmt(p.saldo_proyectado)}</td>
-    </tr>`;
-  }).join("");
-
-  const html = `
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</title>
-<style>
-  @page{ size:A4 portrait; margin:16mm; }
-  *{ box-sizing:border-box }
-  body{ margin:0; font-family:system-ui,Segoe UI,Arial; color:#111; background:#fff; font-size:13px; }
-  .topbar{ position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; background:#fff; border-bottom:1px solid #e5e7eb; }
-  .topbar .ttl{ font-size:14px; font-weight:900 }
-  .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 14px; border-radius:10px; font-weight:800; cursor:pointer; font-size:13px }
-  .page{ max-width:800px; margin:0 auto; padding:24px 20px }
-  h1{ font-size:18px; font-weight:900; margin:0 0 4px 0 }
-  h2{ font-size:14px; font-weight:900; margin:20px 0 8px 0; border-bottom:1px solid #ddd; padding-bottom:4px }
-  .kv{ margin:4px 0; line-height:1.5 }
-  .k{ color:#555 }
-  .b{ font-weight:700 }
-  .resumen{ background:#f8f9fa; border:1px solid #e5e7eb; border-radius:10px; padding:12px 16px; margin:12px 0; display:flex; gap:24px; flex-wrap:wrap }
-  .resumen .item{ display:flex; flex-direction:column; gap:2px }
-  .resumen .lbl{ font-size:11px; color:#666 }
-  .resumen .val{ font-size:15px; font-weight:900 }
-  table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:12.5px }
-  th{ background:#f1f5f9; text-align:left; padding:8px 10px; font-weight:800; color:#334155; border-bottom:2px solid #cbd5e1 }
-  td{ padding:7px 10px; border-bottom:1px solid #e2e8f0; vertical-align:top }
-  tr:last-child td{ border-bottom:none }
-  .sigGrid{ display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-top:40px }
-  .line{ border-top:1px solid #111; margin-top:48px }
-  .lineLabel{ font-size:12px; color:#444; margin-top:6px }
-  @media screen{ body{ background:#e5e7eb } .page{ background:#fff; margin:12px auto; box-shadow:0 4px 24px rgba(0,0,0,.12); border-radius:12px } }
-  @media print{ .topbar{ display:none } body{ background:#fff } .page{ box-shadow:none; border-radius:0 } }
-</style>
-</head>
-<body>
-<div class="topbar">
-  <div class="ttl">Acuerdo + Plan de Pagos – Bertinelli / Lin Racioppi</div>
-  <button class="btn" onclick="window.print()">Imprimir</button>
-</div>
-<div class="page">
-  <h1>Cuenta Corriente – Bertinelli / Lin Racioppi</h1>
-  <div style="color:#555;font-size:12px;margin-bottom:16px">Documento de seguimiento de pagos del saldo convenido en escritura</div>
-
-  <h2>Datos de la operación</h2>
-  <div class="kv"><span class="k">Escritura:</span> <span class="b">N° ${st.meta.escritura_num}</span> – Registro Notarial N° <span class="b">${st.meta.registro}</span> – Escribano: <span class="b">${st.meta.escribano}</span></div>
-  <div class="kv"><span class="k">Inmueble:</span> <span class="b">${st.meta.inmueble}</span></div>
-  <div class="kv"><span class="k">Vendedor:</span> <span class="b">${st.meta.vendedor}</span> – DNI ${st.meta.dni_vendedor}</div>
-  <div class="kv"><span class="k">Comprador:</span> <span class="b">${st.meta.comprador}</span> – DNI ${st.meta.dni_comprador}</div>
-
-  <h2>Anexo económico</h2>
-  <div class="kv"><span class="k">Precio escriturado:</span> USD 41.000</div>
-  <div class="kv"><span class="k">Crédito Banco Nación:</span> USD 30.850</div>
-  <div class="kv"><span class="k">Entrega inicial (${st.meta.ref_mes}):</span> USD ${fmt(st.meta.entrega_inicial)}</div>
-  <div class="kv"><span class="k">Saldo convenido en cuenta corriente:</span> <span class="b">USD ${fmt(st.meta.saldo_inicial)}</span></div>
-
-  <h2>Estado actual</h2>
-  <div class="resumen">
-    <div class="item"><span class="lbl">Saldo restante</span><span class="val">USD ${fmt(saldoRestante)}</span></div>
-    <div class="item"><span class="lbl">Cuotas restantes</span><span class="val">${cuotasRestantes}</span></div>
-    <div class="item"><span class="lbl">Fin estimado</span><span class="val">${fin}</span></div>
-  </div>
-
-  <h2>Plan de pagos proyectado</h2>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:100px">Período</th>
-        <th>Concepto</th>
-        <th style="width:110px;text-align:right">Monto (U$S)</th>
-        <th style="width:90px">Estado</th>
-        <th style="width:130px;text-align:right">Saldo proyectado</th>
-      </tr>
-    </thead>
-    <tbody>${filasPlan}</tbody>
-  </table>
-
-  <div class="sigGrid">
-    <div>
-      <div class="line"></div>
-      <div class="lineLabel">${st.meta.comprador}</div>
-      <div class="lineLabel">DNI: ${st.meta.dni_comprador}</div>
-    </div>
-    <div>
-      <div class="line"></div>
-      <div class="lineLabel">${st.meta.vendedor}</div>
-      <div class="lineLabel">DNI: ${st.meta.dni_vendedor}</div>
-    </div>
-  </div>
-</div>
-</body>
-</html>`;
-
-  const w = window.open("", "_blank");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
-
-/* =========================
    RECIBO PRINT (igual que tenías)
 ========================= */
 function openReciboPrint(st, rec, modo, saldoLuego) {
@@ -962,13 +844,6 @@ function render() {
    UI EVENTS
 ========================= */
 function bindUI() {
-  if ($("btnPrintPlan")) {
-    $("btnPrintPlan").onclick = () => {
-      if (!state) return alert("Cargando datos, intentá en un momento.");
-      openAcuerdoPrint(state);
-    };
-  }
-
   if ($("btnEmitir")) {
     $("btnEmitir").onclick = () => {
       $("e_periodo").value = periodoActual();
