@@ -836,7 +836,6 @@ function render() {
   if (!state || !state.meta || !Array.isArray(state.movs) || !Array.isArray(state.recibos)) {
     if ($("saldoGrande")) $("saldoGrande").textContent = "U$S —";
     if ($("saldoExtra")) $("saldoExtra").textContent = "Estado inválido (no se pudo cargar).";
-    if ($("planResumenInline")) $("planResumenInline").textContent = "—";
     return;
   }
 
@@ -849,7 +848,6 @@ function render() {
 
   if ($("saldoGrande")) $("saldoGrande").textContent = "U$S " + fmt(saldo);
   if ($("saldoExtra")) $("saldoExtra").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
-  if ($("planResumenInline")) $("planResumenInline").textContent = `Saldo restante: U$S ${fmt(saldoRestante)} · Fin estimado: ${fin} · Cuotas restantes: ${cuotasRestantes}`;
 
   const tbRec = $("tbodyRec");
   if (tbRec) {
