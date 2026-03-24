@@ -532,59 +532,28 @@ function openReciboPrint(st, rec, modo, saldoLuego) {
    ADJUNTO VIEWER
 ========================= */
 function abrirAdjunto(adjunto){
-  const w = window.open("", "_blank");
   if(!adjunto || !(adjunto.dataUrl || adjunto.url)){
-    w.document.write("<p style='font-family:system-ui'>No hay adjunto.</p>");
-    w.document.close();
+    alert("No hay adjunto.");
     return;
   }
 
   const safeName = (adjunto.name || "adjunto").replaceAll("<","").replaceAll(">","");
   const src = adjunto.url || adjunto.dataUrl;
   const isPdf = (adjunto.type || "").includes("pdf") || String(src).includes("application/pdf");
-  const title = `Adjunto – ${safeName}`;
 
-  const html = `
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>${title}</title>
-<style>
-  :root{ --barH:56px; }
-  html,body{ height:100%; }
-  body{ margin:0; font-family:system-ui,Segoe UI,Arial; background:#fff; color:#111; }
-  .topbar{ position: sticky; top:0; z-index:10; height: var(--barH); display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 12px; background:#fff; border-bottom: 1px solid #e5e7eb; }
-  .ttl{ font-size:14px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .btn{ border:1px solid #111; background:#f2f2f2; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
-  .viewer{ height: calc(100dvh - var(--barH)); width: 100vw; overflow:auto; background:#fff; }
-  .imgWrap{ display:flex; justify-content:center; padding: 12px; }
-  img{ max-width: 100%; height: auto; border:1px solid #ddd; border-radius:10px; }
-  iframe, embed{ width:100%; height:100%; border:none; }
-  @media print{ .topbar{ display:none; } .viewer{ height:auto; } }
-</style>
-</head>
-<body>
-<div class="topbar">
-  <div class="ttl">${title}</div>
-  <button class="btn" id="btnCta">Imprimir</button>
-</div>
-<div class="viewer">
-  ${isPdf
-    ? `<embed src="${src}" type="application/pdf" />`
-    : `<div class="imgWrap"><img src="${src}" alt="Adjunto"/></div>`
+  const titleEl = $("adjuntoTitle");
+  const viewer = $("adjuntoViewer");
+  const descarga = $("adjuntoDescargar");
+
+  if(titleEl) titleEl.textContent = safeName;
+  if(descarga){ descarga.href = src; descarga.download = safeName; }
+  if(viewer){
+    viewer.innerHTML = isPdf
+      ? `<embed src="${src}" type="application/pdf" style="width:100%;height:70vh;border:none;border-radius:12px" />`
+      : `<div style="text-align:center"><img src="${src}" alt="Adjunto" style="max-width:100%;max-height:70vh;border-radius:12px;border:1px solid var(--line2)" /></div>`;
   }
-</div>
-<script>
-  document.getElementById("btnCta").onclick = ()=> window.print();
-<\/script>
-</body>
-</html>`;
 
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  show("modalAdjunto");
 }
 
 /* =========================
@@ -935,6 +904,9 @@ function bindUI() {
 
   if ($("i_cancel")) $("i_cancel").onclick = () => hide("modalImputar");
   if ($("modalImputar")) $("modalImputar").onclick = (e) => { if (e.target === $("modalImputar")) hide("modalImputar"); };
+
+  if ($("adjuntoCerrar")) $("adjuntoCerrar").onclick = () => { hide("modalAdjunto"); $("adjuntoViewer").innerHTML = ""; };
+  if ($("modalAdjunto")) $("modalAdjunto").onclick = (e) => { if (e.target === $("modalAdjunto")) { hide("modalAdjunto"); $("adjuntoViewer").innerHTML = ""; } };
 
   if ($("i_file")) {
     $("i_file").onchange = () => {

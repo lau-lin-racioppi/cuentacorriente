@@ -276,6 +276,20 @@
     </div>
   </div>
 
+  <!-- Modal Adjunto Viewer -->
+  <div class="modal" id="modalAdjunto">
+    <div class="card modalAdjuntoCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <h2 id="adjuntoTitle" style="margin:0;color:var(--muted);font-size:14px;word-break:break-all"></h2>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <a class="btn" id="adjuntoDescargar" download>Descargar</a>
+          <button class="btn" id="adjuntoCerrar">Cerrar</button>
+        </div>
+      </div>
+      <div id="adjuntoViewer"></div>
+    </div>
+  </div>
+
   <!-- IMPORTANTE: app.js como módulo, dentro de la misma carpeta -->
 <script type="module" src="./app.js"></script>
 </body>
